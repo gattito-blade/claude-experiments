@@ -1,0 +1,423 @@
+<title>Snowbank Shuffle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@500;700;800&display=swap">
+<style>
+  /* Layout: one construction-paper stage, controls taped underneath like cut-out labels. */
+  :root {
+    --kraft: #c9a878;       /* page ground: brown kraft paper */
+    --kraft-dark: #a9875a;
+    --card: #f5efe2;        /* cut-out label paper */
+    --ink: #1d1b22;         /* outline ink */
+    --accent: #ef6a3a;      /* beanie orange */
+    --muted: #5b4a36;
+    --font-display: "Bowlby One", "Arial Black", Impact, sans-serif;
+    --font-body: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--kraft);
+    background-image: radial-gradient(rgba(0,0,0,.05) 1px, transparent 1px);
+    background-size: 5px 5px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding-inline: 16px;
+    padding-block: 20px 28px;
+    box-sizing: border-box;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 400; margin: 0;
+    font-size: clamp(28px, 5vw, 46px); line-height: 1; letter-spacing: .01em;
+    color: var(--card); text-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(-1.5deg); text-wrap: balance;
+  }
+  header p { margin: 0; font-weight: 700; color: var(--muted); font-size: 15px; }
+  .stage {
+    position: relative; background: var(--ink); padding: 6px; border-radius: 4px;
+    box-shadow: 0 8px 0 var(--kraft-dark), 0 14px 24px rgba(0,0,0,.25);
+  }
+  canvas { display: block; width: 100%; height: auto; border-radius: 2px; touch-action: none; cursor: pointer; }
+  canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .key, button.pad {
+    font: 800 14px/1 var(--font-body); color: var(--ink); background: var(--card);
+    border: 2.5px solid var(--ink); border-radius: 6px; padding: 10px 14px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  button.pad { cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; min-width: 52px; }
+  button.pad:active, button.pad.on { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); background: #ffe2b8; }
+  button.pad:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .hint { margin: 0; line-height: 1.9; font-weight: 700; font-size: 14px; color: var(--muted); max-width: 65ch; }
+  .hint kbd { font: 800 12px var(--font-body); background: var(--card); border: 2px solid var(--ink); border-radius: 4px; padding: 1px 6px; color: var(--ink); }
+  .spacer { flex: 1; }
+  @media (max-width: 600px) { .hint { font-size: 13px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Snowbank Shuffle</h1>
+    <p>Walk Denny around town.</p>
+  </header>
+  <div class="stage"><canvas id="game" tabindex="0" aria-label="Paper cut-out kid in a snowy town. Use arrow keys to walk, space to jump."></canvas></div>
+  <div class="controls">
+    <button class="pad" id="bLeft" aria-label="Walk left">◀</button>
+    <button class="pad" id="bRight" aria-label="Walk right">▶</button>
+    <button class="pad" id="bJump">Jump</button>
+    <button class="pad" id="bWave">Wave</button>
+    <button class="pad" id="bTalk">Talk</button>
+    <span class="spacer"></span>
+  </div>
+  <p class="hint"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> to walk, <kbd>Space</kbd> to jump, <kbd>E</kbd> to wave, <kbd>T</kbd> to talk. Tap the ground to walk to that spot.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- palette (flat construction paper) ----------
+  const C = {
+    ink: '#1d1b22', sky: '#8fc4e8', skyLow: '#b9dcf0',
+    mtnFar: '#a9b9d6', mtnMid: '#7f93b8', snow: '#f7f9fb', snowShade: '#dfe7ef',
+    pine: '#2e6b4f', pineDark: '#24563f', trunk: '#6b4a2e',
+    skin: '#f6d3b0', coat: '#2f8f83', coatDark: '#257367', pants: '#6b4a2e',
+    boot: '#3a2a22', hat: '#ef6a3a', hatBand: '#f4c542', mitten: '#d9403a',
+    houses: ['#d98c5f', '#c9c26b', '#8fa8c9', '#c77d9a', '#9bbf8a'], roof: '#5c4033',
+  };
+
+  // ---------- world ----------
+  const VIEW_H = 540, GROUND = 452, WORLD_W = 3400;
+  let scale = 1, viewW = 960;
+  function resize() {
+    const cssW = canvas.parentElement.clientWidth - 12;
+    const cssH = Math.max(260, Math.min(cssW * 9 / 16, innerHeight * 0.68));
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
+    scale = canvas.height / VIEW_H;
+    viewW = canvas.width / scale;
+  }
+  addEventListener('resize', resize);
+
+  // Seeded random so the town is the same every visit.
+  let s = 20260930;
+  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+
+  const mountains = [0, 1].map((layer) => {
+    const pts = []; let x = -200;
+    while (x < WORLD_W + 400) { pts.push([x, 200 + layer * 60 + rnd() * 110]); x += 160 + rnd() * 220; }
+    return pts;
+  });
+  const houses = [];
+  for (let x = 120; x < WORLD_W; x += 380 + rnd() * 260)
+    houses.push({ x, w: 150 + rnd() * 70, h: 110 + rnd() * 50, color: C.houses[houses.length % C.houses.length], door: rnd() > .5 });
+  const pines = [];
+  for (let x = 40; x < WORLD_W; x += 70 + rnd() * 160) pines.push({ x, h: 90 + rnd() * 80, far: rnd() > .45 });
+  const mounds = [];
+  for (let x = 0; x < WORLD_W; x += 140 + rnd() * 200) mounds.push({ x, w: 60 + rnd() * 90, h: 10 + rnd() * 14 });
+  const flakes = Array.from({ length: 90 }, () => ({ x: rnd() * 2000, y: rnd() * VIEW_H, r: 1.5 + rnd() * 2.5, v: 25 + rnd() * 35, p: rnd() * 6 }));
+
+  // Paper grain overlay, generated once.
+  const grain = document.createElement('canvas'); grain.width = grain.height = 160;
+  { const g = grain.getContext('2d'), img = g.createImageData(160, 160);
+    for (let i = 0; i < img.data.length; i += 4) { const v = rnd() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 14; }
+    g.putImageData(img, 0, 0); }
+  const grainPattern = ctx.createPattern(grain, 'repeat');
+
+  // ---------- character state ----------
+  const LINES = [
+    "This town has way too much snow.",
+    "I'm not lost. I'm exploring.",
+    "Does anybody else smell pancakes?",
+    "My mom says this coat is \"character building.\"",
+    "I could totally jump over that house.",
+    "Recess should be four hours long.",
+  ];
+  const kid = { x: 520, y: 0, vx: 0, vy: 0, facing: 1, target: null, wave: 0, talk: 0, line: '', blink: 0, nextBlink: 2 };
+  let lineIdx = 0;
+  const keys = new Set();
+  const pads = { left: false, right: false };
+
+  function jump() { if (kid.y === 0) kid.vy = 560; }
+  function wave() { kid.wave = 1.6; }
+  function talk() { kid.line = LINES[lineIdx++ % LINES.length]; kid.talk = 3.2; }
+
+  addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (['arrowleft', 'arrowright', 'arrowup', ' ', 'a', 'd', 'w'].includes(k)) e.preventDefault();
+    if (e.repeat) return;
+    keys.add(k); kid.target = null;
+    if (k === ' ' || k === 'arrowup' || k === 'w') jump();
+    if (k === 'e') wave();
+    if (k === 't') talk();
+  });
+  addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+  addEventListener('blur', () => keys.clear());
+
+  function holdPad(id, name) {
+    const el = document.getElementById(id);
+    const on = (e) => { e.preventDefault(); pads[name] = true; kid.target = null; el.classList.add('on'); el.setPointerCapture?.(e.pointerId); };
+    const off = () => { pads[name] = false; el.classList.remove('on'); };
+    el.addEventListener('pointerdown', on);
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => el.addEventListener(ev, off));
+  }
+  holdPad('bLeft', 'left'); holdPad('bRight', 'right');
+  document.getElementById('bJump').addEventListener('click', jump);
+  document.getElementById('bWave').addEventListener('click', wave);
+  document.getElementById('bTalk').addEventListener('click', talk);
+
+  let camX = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.focus({ preventScroll: true });
+    const r = canvas.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width * viewW, py = (e.clientY - r.top) / r.height * VIEW_H;
+    const wx = camX + px;
+    // Tapping the kid makes them talk; tapping anywhere else walks there.
+    if (Math.abs(wx - kid.x) < 55 && py > GROUND - kid.y - 170 && py < GROUND - kid.y + 10) talk();
+    else kid.target = Math.max(40, Math.min(WORLD_W - 40, wx));
+  });
+
+  // ---------- update ----------
+  const SPEED = 230;
+  function update(dt, t) {
+    let dir = 0;
+    if (keys.has('arrowleft') || keys.has('a') || pads.left) dir -= 1;
+    if (keys.has('arrowright') || keys.has('d') || pads.right) dir += 1;
+    if (!dir && kid.target !== null) {
+      const d = kid.target - kid.x;
+      if (Math.abs(d) < 6) kid.target = null; else dir = Math.sign(d);
+    }
+    kid.vx = dir * SPEED;
+    if (dir) kid.facing = dir;
+    kid.x = Math.max(40, Math.min(WORLD_W - 40, kid.x + kid.vx * dt));
+    if (kid.y > 0 || kid.vy > 0) {
+      kid.vy -= 1600 * dt; kid.y += kid.vy * dt;
+      if (kid.y <= 0) { kid.y = 0; kid.vy = 0; }
+    }
+    kid.wave = Math.max(0, kid.wave - dt);
+    kid.talk = Math.max(0, kid.talk - dt);
+    kid.blink = Math.max(0, kid.blink - dt);
+    if (t > kid.nextBlink) { kid.blink = .13; kid.nextBlink = t + 2 + Math.random() * 3; }
+    const want = kid.x - viewW * 0.45;
+    camX += (Math.max(0, Math.min(WORLD_W - viewW, want)) - camX) * Math.min(1, dt * 5);
+    for (const f of flakes) {
+      if (reduceMotion) break;
+      f.y += f.v * dt; f.x += Math.sin(t * 1.3 + f.p) * 12 * dt;
+      if (f.y > VIEW_H + 5) { f.y = -5; f.x = Math.random() * 2000; }
+    }
+  }
+
+  // ---------- drawing helpers ----------
+  function outlined(fill, lw = 3) { ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = C.ink; ctx.stroke(); }
+  function ellipse(x, y, rx, ry, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); }
+
+  function drawBackground() {
+    // Sky
+    const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+    g.addColorStop(0, C.sky); g.addColorStop(1, C.skyLow);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, viewW, VIEW_H);
+    // Mountains (parallax)
+    mountains.forEach((pts, layer) => {
+      const par = layer ? 0.25 : 0.12;
+      ctx.save(); ctx.translate(-camX * par, 0);
+      ctx.beginPath(); ctx.moveTo(pts[0][0], GROUND);
+      pts.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(pts[pts.length - 1][0], GROUND); ctx.closePath();
+      ctx.fillStyle = layer ? C.mtnMid : C.mtnFar; ctx.fill();
+      // Snow caps: clip to mountain and paint the top band.
+      ctx.save(); ctx.clip();
+      ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + 38) : ctx.moveTo(x, y + 38)));
+      for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i][0], pts[i][1] - 50);
+      ctx.fillStyle = C.snow; ctx.globalAlpha = .9; ctx.fill(); ctx.restore();
+      ctx.restore();
+    });
+    // Far pines
+    ctx.save(); ctx.translate(-camX * 0.55, 0);
+    for (const p of pines) if (p.far) pine(p.x * 1.1, GROUND - 40, p.h * .6, C.pineDark, false);
+    ctx.restore();
+    // Houses + near pines at ground speed
+    ctx.save(); ctx.translate(-camX, 0);
+    ctx.fillStyle = C.snowShade; ctx.fillRect(camX - 10, GROUND - 42, viewW + 20, 50);
+    for (const h of houses) house(h);
+    for (const p of pines) if (!p.far) pine(p.x, GROUND - 30, p.h, C.pine, true);
+    ctx.restore();
+    // Ground
+    ctx.fillStyle = C.snow; ctx.fillRect(0, GROUND - 16, viewW, VIEW_H);
+    ctx.save(); ctx.translate(-camX, 0);
+    for (const m of mounds) { ellipse(m.x, GROUND - 16, m.w, m.h); ctx.fillStyle = C.snow; ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle = C.snowShade; ctx.fillRect(0, GROUND + 40, viewW, VIEW_H);
+  }
+
+  function pine(x, base, h, color, outline) {
+    const w = h * 0.55;
+    ctx.fillStyle = C.trunk; ctx.fillRect(x - 5, base - 14, 10, 18);
+    for (let i = 0; i < 3; i++) {
+      const top = base - h + i * h * 0.26, bot = base - 10 - (2 - i) * h * 0.18, ww = w * (0.55 + i * 0.25);
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x + ww / 2, bot); ctx.lineTo(x - ww / 2, bot); ctx.closePath();
+      if (outline) outlined(color, 2.5); else { ctx.fillStyle = color; ctx.fill(); }
+    }
+    ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w * .14, base - h * .82); ctx.lineTo(x - w * .14, base - h * .82); ctx.closePath();
+    ctx.fillStyle = C.snow; ctx.fill();
+  }
+
+  function house(h) {
+    const base = GROUND - 26, x = h.x, top = base - h.h;
+    ctx.beginPath(); ctx.rect(x, top, h.w, h.h); outlined(h.color);
+    ctx.beginPath(); ctx.moveTo(x - 16, top + 2); ctx.lineTo(x + h.w / 2, top - h.h * .55); ctx.lineTo(x + h.w + 16, top + 2); ctx.closePath(); outlined(C.roof);
+    ctx.beginPath(); ctx.moveTo(x - 16, top + 2); ctx.lineTo(x + h.w / 2, top - h.h * .55); ctx.lineTo(x + h.w + 16, top + 2);
+    ctx.lineTo(x + h.w + 4, top + 12); ctx.lineTo(x + h.w / 2, top - h.h * .42); ctx.lineTo(x - 4, top + 12); ctx.closePath(); outlined(C.snow, 2);
+    const wy = top + 22;
+    ctx.beginPath(); ctx.rect(x + 16, wy, 34, 30); outlined('#fbe6a2', 2.5);
+    ctx.beginPath(); ctx.moveTo(x + 33, wy); ctx.lineTo(x + 33, wy + 30); ctx.moveTo(x + 16, wy + 15); ctx.lineTo(x + 50, wy + 15); ctx.lineWidth = 2; ctx.stroke();
+    if (h.door) { ctx.beginPath(); ctx.rect(x + h.w - 52, base - 56, 32, 56); outlined('#7a4b34', 2.5); }
+    else { ctx.beginPath(); ctx.rect(x + h.w - 52, wy, 34, 30); outlined('#fbe6a2', 2.5); }
+  }
+
+  // ---------- the kid ----------
+  // Origin at the middle of the feet; drawn as flat cut-out pieces with ink outlines.
+  // Limbs move on a stepped 12 fps clock so it looks like paper cut-outs being nudged.
+  function drawKid(t) {
+    const frame = Math.floor(t * 12);
+    const walking = kid.vx !== 0 && kid.y === 0;
+    const air = kid.y > 0;
+    const step = walking ? (frame % 4 < 2 ? 1 : -1) : 0;
+    const bob = walking && frame % 2 ? -3 : 0;
+    const f = kid.facing;
+    const sx = kid.x - camX, sy = GROUND - kid.y;
+
+    // Shadow
+    const shadowW = 44 * (1 - Math.min(.6, kid.y / 300));
+    ellipse(sx, GROUND + 2, shadowW, 7); ctx.fillStyle = 'rgba(40,60,90,.18)'; ctx.fill();
+
+    ctx.save(); ctx.translate(sx, sy + bob);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+    // Feet
+    const tuck = air ? -8 : 0;
+    ellipse(-15 + step * 7, -4 + tuck, 15, 7.5); outlined(C.boot, 2.5);
+    ellipse(15 - step * 7, -4 + tuck, 15, 7.5); outlined(C.boot, 2.5);
+    // Pants
+    ctx.beginPath(); ctx.rect(-27, -20 + tuck, 54, 14); outlined(C.pants, 2.5);
+
+    // Coat (slightly flared)
+    ctx.beginPath();
+    ctx.moveTo(-31, -18 + tuck); ctx.lineTo(31, -18 + tuck);
+    ctx.quadraticCurveTo(30, -58, 24, -66); ctx.lineTo(-24, -66);
+    ctx.quadraticCurveTo(-30, -58, -31, -18 + tuck); ctx.closePath();
+    outlined(C.coat);
+    ctx.beginPath(); ctx.moveTo(f * 3, -64); ctx.lineTo(f * 3, -20 + tuck); ctx.lineWidth = 2; ctx.strokeStyle = C.coatDark; ctx.stroke();
+    for (const by of [-54, -42, -30]) { ellipse(f * 9, by, 2.6, 2.6); ctx.fillStyle = C.ink; ctx.fill(); }
+
+    // Mittens: swing when walking, up when jumping, one waves.
+    const swing = walking ? step * 6 : 0;
+    const back = [-f * 33, -38 - swing * f * .5 - (air ? 22 : 0)];
+    let front = [f * 33, -38 + swing * f * .5 - (air ? 22 : 0)];
+    if (kid.wave > 0) front = [f * 64 + (frame % 4 < 2 ? 6 : -4) * f, -92];
+    for (const [mx, my] of [back, front]) {
+      ctx.beginPath(); ctx.moveTo(Math.sign(mx) * 24, -58); ctx.lineTo(mx, my);
+      ctx.lineWidth = 12; ctx.strokeStyle = C.ink; ctx.stroke();
+      ctx.lineWidth = 7; ctx.strokeStyle = C.coat; ctx.stroke();
+      ellipse(mx, my, 9, 9); outlined(C.mitten, 2.5);
+      ellipse(mx + Math.sign(mx) * 5, my - 5, 4, 4); outlined(C.mitten, 2);
+    }
+
+    // Head
+    const hx = 0, hy = -112;
+    ellipse(hx, hy, 52, 48); outlined(C.skin);
+
+    // Beanie: dome over the top of the head, band, pom-pom.
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(hx, hy, 52, 48, 0, Math.PI, 0); ctx.lineTo(hx + 52, hy - 6);
+    ctx.clip();
+    ctx.fillStyle = C.hat; ctx.fillRect(hx - 60, hy - 60, 120, 44);
+    ctx.fillStyle = C.hatBand; ctx.fillRect(hx - 60, hy - 30, 120, 13);
+    ctx.fillStyle = 'rgba(0,0,0,.08)'; for (let i = -48; i < 48; i += 12) ctx.fillRect(hx + i, hy - 60, 5, 30);
+    ctx.restore();
+    ctx.beginPath(); ctx.moveTo(hx - 51, hy - 17); ctx.quadraticCurveTo(hx, hy - 12, hx + 51, hy - 17); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(hx, hy, 52, 48, 0, Math.PI * 1.02, Math.PI * 1.98); ctx.lineWidth = 3; ctx.stroke();
+    ellipse(hx + f * 4, hy - 52, 11, 10); outlined(C.hatBand, 2.5);
+
+    // Eyes: two big ovals that touch, pupils look where he's heading.
+    const ey = hy + 2;
+    for (const side of [-1, 1]) {
+      const ex = hx + side * 13 + f * 3;
+      if (kid.blink > 0) {
+        ctx.beginPath(); ctx.moveTo(ex - 10, ey + 2); ctx.quadraticCurveTo(ex, ey + 6, ex + 10, ey + 2);
+        ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke();
+      } else {
+        ellipse(ex, ey, 14, 16, side * -0.12); outlined('#ffffff', 2.5);
+        const look = kid.target !== null ? Math.sign(kid.target - kid.x) : f;
+        ellipse(ex + look * 5 - side * 1, ey + (air ? -4 : 1), 3.2, 3.6); ctx.fillStyle = C.ink; ctx.fill();
+      }
+    }
+
+    // Mouth: small line, flaps open on the 12 fps clock while talking.
+    const mx = hx + f * 6, my = hy + 30;
+    if (kid.talk > 0 && frame % 3 !== 0) { ellipse(mx, my, 7, 5); outlined('#7a2530', 2); }
+    else if (air) { ellipse(mx, my, 5, 5); outlined('#7a2530', 2); }
+    else { ctx.beginPath(); ctx.moveTo(mx - 8, my); ctx.quadraticCurveTo(mx, my + 3, mx + 8, my); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke(); }
+
+    ctx.restore();
+
+    kid.bubbleAt = [sx, sy + bob - 180];
+  }
+
+  function bubble(x, y, text) {
+    ctx.save();
+    ctx.font = '800 17px Nunito, "Trebuchet MS", sans-serif';
+    const maxW = Math.min(280, viewW - 40);
+    const words = text.split(' '), lines = []; let cur = '';
+    for (const w of words) { const tryL = cur ? cur + ' ' + w : w; if (ctx.measureText(tryL).width > maxW - 28 && cur) { lines.push(cur); cur = w; } else cur = tryL; }
+    lines.push(cur);
+    const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28, h = lines.length * 22 + 18;
+    let bx = Math.max(10, Math.min(viewW - w - 10, x - w / 2)); const by = Math.max(10, y - h);
+    ctx.beginPath(); ctx.roundRect(bx, by, w, h, 12);
+    ctx.moveTo(x - 10, by + h); ctx.lineTo(x - 2, by + h + 16); ctx.lineTo(x + 8, by + h);
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillRect(x - 8, by + h - 3, 14, 4);
+    ctx.fillStyle = C.ink; ctx.textBaseline = 'top';
+    lines.forEach((l, i) => ctx.fillText(l, bx + 14, by + 10 + i * 22));
+    ctx.restore();
+  }
+
+  function drawSnow() {
+    ctx.fillStyle = '#ffffff';
+    for (const f of flakes) {
+      const x = ((f.x - camX * 0.3) % viewW + viewW) % viewW;
+      ellipse(x, f.y, f.r, f.r); ctx.fill();
+    }
+  }
+
+  // ---------- loop ----------
+  let last = performance.now(), t0 = last;
+  function start(saved) {
+    if (saved && typeof saved.x === 'number') { kid.x = saved.x; kid.facing = saved.facing || 1; }
+    camX = Math.max(0, kid.x - viewW * 0.45);
+    requestAnimationFrame(tick);
+  }
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const t = (now - t0) / 1000;
+    update(dt, t);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    drawBackground();
+    drawKid(t);
+    drawSnow();
+    if (kid.talk > 0) bubble(kid.bubbleAt[0], kid.bubbleAt[1], kid.line);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = grainPattern; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    requestAnimationFrame(tick);
+  }
+
+  resize();
+  window.claude?.hot?.snapshot?.(() => ({ x: kid.x, facing: kid.facing }));
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+  // Say hello on load so the first frame shows what he can do.
+  kid.line = "Hi, I'm Denny. Use the arrows to walk me around!"; kid.talk = 4.5;
+})();
+</script>
