@@ -1,0 +1,553 @@
+<title>Felt Grenadier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  /* Layout: a cutting mat on the workbench, with a museum-style tag and felt-scrap controls beneath. */
+  :root {
+    --bench: #e9e2d4;       /* workbench paper */
+    --bench-dot: rgba(60,45,30,.06);
+    --card: #fbf8f1;        /* tag card */
+    --ink: #242226;
+    --red: #d2302c;         /* coat felt */
+    --gold: #e2b23b;        /* braid felt */
+    --muted: #6b5d4b;
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-body: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bench);
+    background-image: radial-gradient(var(--bench-dot) 1px, transparent 1px);
+    background-size: 6px 6px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    padding-inline: 16px;
+    padding-block: 22px 32px;
+    box-sizing: border-box;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 16px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 5vw, 48px); line-height: 1; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  h1 span { color: var(--red); }
+  header p { margin: 0; font-weight: 700; color: var(--muted); font-size: 15px; max-width: 60ch; }
+  .stage { position: relative; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 0 rgba(0,0,0,.08), 0 18px 34px rgba(40,30,20,.22); }
+  canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: pointer; }
+  canvas:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; justify-content: space-between; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button.felt {
+    font: 800 14px/1 var(--font-body); color: #fff; background: var(--red);
+    border: 0; border-radius: 3px; padding: 11px 15px; cursor: pointer; min-width: 48px;
+    box-shadow: 1px 2px 0 rgba(0,0,0,.18), 2px 4px 8px rgba(0,0,0,.18);
+    clip-path: polygon(0 3%, 3% 0, 97% 2%, 100% 6%, 99% 96%, 96% 100%, 4% 99%, 1% 95%);
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  button.felt.gold { background: var(--gold); color: var(--ink); }
+  button.felt.dark { background: #2a2a2d; }
+  button.felt:hover { filter: brightness(1.06); }
+  button.felt:active, button.felt.on { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+  button.felt[aria-pressed="true"] { background: #2d6a58; color: #fff; }
+  button.felt:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .tag {
+    background: var(--card); padding: 12px 16px 12px 30px; position: relative; min-width: 0;
+    box-shadow: 1px 2px 6px rgba(0,0,0,.14); transform: rotate(.6deg); max-width: 380px;
+    font-size: 13px; line-height: 1.55; color: var(--muted);
+  }
+  .tag::before { content: ""; position: absolute; left: 11px; top: 16px; width: 9px; height: 9px; border-radius: 50%; background: var(--bench); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+  .tag b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--ink); }
+  .tag dl { display: grid; grid-template-columns: auto 1fr; gap: 0 12px; margin: 6px 0 0; font-variant-numeric: tabular-nums; }
+  .tag dt { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; padding-top: 2px; }
+  .tag dd { margin: 0; }
+  .hint { margin: 0; line-height: 2; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .hint kbd { font: 800 12px var(--font-body); background: var(--card); border-radius: 3px; padding: 1px 6px; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Felt <span>Grenadier</span></h1>
+    <p>A stop-motion felt puppet on a cutting mat. March him, make him salute, or wave.</p>
+  </header>
+  <div class="stage"><canvas id="c" tabindex="0" aria-label="Felt toy soldier on a green cutting mat. Arrow keys march, S salutes, W waves, A stands to attention."></canvas></div>
+  <div class="row">
+    <div style="display:grid; gap:10px; min-width:0">
+      <div class="controls">
+        <button class="felt dark" id="bL" aria-label="March left">◀</button>
+        <button class="felt dark" id="bR" aria-label="March right">▶</button>
+        <button class="felt" id="bSalute">Salute</button>
+        <button class="felt" id="bWave">Wave</button>
+        <button class="felt gold" id="bAtt">Attention</button>
+        <button class="felt dark" id="bStop" aria-pressed="true">Stop-motion: 12 fps</button>
+      </div>
+      <p class="hint"><kbd>←</kbd> <kbd>→</kbd> march · <kbd>S</kbd> salute · <kbd>W</kbd> wave · <kbd>A</kbd> attention · <kbd>M</kbd> stop-motion. Tap the mat to march there. His eyes follow your pointer.</p>
+    </div>
+    <div class="tag">
+      <b>Grenadier, No. 7</b>
+      <dl>
+        <dt>Medium</dt><dd>Wool felt on card, glued in layers</dd>
+        <dt>Pieces</dt><dd id="pieces">—</dd>
+        <dt>Joints</dt><dd>2 brass pins at the elbows, 2 hidden under the epaulettes</dd>
+        <dt>Frame rate</dt><dd id="fps">12 frames per second</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TAU = Math.PI * 2;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  const F = {
+    red: '#d2302c', redDeep: '#b3252a', black: '#262629', blackDeep: '#1b1b1e', cream: '#e8dfd0', creamDeep: '#d9cfbf',
+    gold: '#e2b23b', goldDeep: '#c99a2c', skin: '#f0a98b', eye: '#efe7da', mouth: '#9b5a36', brass: '#c9a13b',
+  };
+
+  // ---------- felt pieces (reference units: 1024 wide, feet at y 1500) ----------
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  // Scissor-cut polygon: subdivide edges and nudge the points so no edge is perfectly straight.
+  function cut(pts, jitter = 1.8, step = 18) {
+    const p = new Path2D();
+    for (let i = 0; i < pts.length; i++) {
+      const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length];
+      const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / step));
+      for (let k = 0; k < n; k++) {
+        const t = k / n, j = k === 0 ? .35 : 1;
+        const x = x0 + (x1 - x0) * t + (rnd() - .5) * 2 * jitter * j, y = y0 + (y1 - y0) * t + (rnd() - .5) * 2 * jitter * j;
+        i === 0 && k === 0 ? p.moveTo(x, y) : p.lineTo(x, y);
+      }
+    }
+    p.closePath();
+    return p;
+  }
+  function oval(cx, cy, rx, ry = rx, jitter = 1.2) {
+    const n = Math.max(18, Math.round((rx + ry) * .35)), pts = [];
+    for (let i = 0; i < n; i++) { const a = (i / n) * TAU; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+    return cut(pts, jitter, 999);
+  }
+  const mirror = (pts) => pts.map(([x, y]) => [1024 - x, y]).reverse();
+  function band(x0, y0, x1, y1, w) {
+    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy), nx = -dy / l * w / 2, ny = dx / l * w / 2;
+    return [[x0 + nx, y0 + ny], [x1 + nx, y1 + ny], [x1 - nx, y1 - ny], [x0 - nx, y0 - ny]];
+  }
+  function combine(...paths) { const p = new Path2D(); paths.forEach((q) => p.addPath(q)); return p; }
+
+  const legL = [[398, 876], [512, 876], [506, 1010], [474, 1254], [346, 1254], [370, 1060]];
+  const bootL = [[342, 1234], [460, 1234], [454, 1440], [444, 1503], [236, 1503], [238, 1480], [300, 1452], [346, 1442]];
+  const hairL = [[330, 424], [372, 392], [404, 382], [404, 474], [384, 452], [376, 482], [354, 444], [326, 446]];
+  const jawL = [[370, 492], [390, 500], [388, 530], [368, 516]];
+  const epL = [[298, 640], [418, 604], [432, 648], [312, 690]];
+  const pouchL = [[304, 882], [406, 870], [416, 1004], [314, 1016]];
+  const flapL = [[304, 882], [406, 870], [410, 934], [307, 944]];
+  function fringe(pts, n, len, dir) {
+    const [a, b] = pts; const out = [];
+    for (let i = 0; i < n; i++) {
+      const t = (i + .5) / n, x = lerp(a[0], b[0], t), y = lerp(a[1], b[1], t);
+      out.push(cut([[x - 5, y - 4], [x + 5, y - 4], [x + 5 + dir, y + len + rnd() * 6], [x - 5 + dir, y + len + rnd() * 6]], 1, 999));
+    }
+    return combine(...out);
+  }
+  function visor() {
+    const pts = [];
+    for (let i = 0; i <= 20; i++) { const t = i / 20, x = lerp(364, 660, t); pts.push([x, 384 - Math.sin(t * Math.PI) * 52 + (t < .5 ? 0 : -2)]); }
+    pts.push([662, 390], [362, 390]);
+    return cut(pts, 1.2, 20);
+  }
+
+  const P = {
+    coatBack: cut([[380, 598], [644, 598], [652, 880], [708, 1147], [604, 1147], [548, 968], [512, 930], [476, 968], [420, 1147], [316, 1147], [372, 880]]),
+    tailFoldL: cut([[372, 900], [392, 900], [372, 1147], [316, 1147]], 1.2),
+    tailFoldR: cut([[632, 900], [652, 900], [708, 1147], [652, 1147]], 1.2),
+    legL: cut(legL), legR: cut(mirror(legL)),
+    kneeL: cut([[420, 1080], [470, 1085], [466, 1100], [418, 1096]], 1), kneeR: cut(mirror([[420, 1080], [470, 1085], [466, 1100], [418, 1096]]), 1),
+    bootL: cut(bootL), bootR: cut(mirror(bootL)),
+    bootTopL: cut([[340, 1232], [462, 1232], [460, 1262], [342, 1262]], 1.2), bootTopR: cut(mirror([[340, 1232], [462, 1232], [460, 1262], [342, 1262]]), 1.2),
+    torso: cut([[376, 604], [648, 604], [654, 876], [566, 914], [512, 886], [458, 914], [370, 876]]),
+    beltA: cut(band(412, 612, 650, 888, 48), 1.4), beltB: cut(band(612, 612, 374, 888, 48), 1.4),
+    disc: oval(512, 764, 40), discRing: oval(512, 764, 28),
+    btn1: oval(512, 662, 15, 15, .8), btn2: oval(512, 828, 15, 15, .8), btn3: oval(512, 876, 15, 15, .8),
+    barL: cut([[408, 866], [470, 864], [470, 888], [408, 890]], 1), barR: cut(mirror([[408, 866], [470, 864], [470, 888], [408, 890]]), 1),
+    pouchL: cut(pouchL), pouchR: cut(mirror(pouchL)), flapL: cut(flapL, 1.4), flapR: cut(mirror(flapL), 1.4),
+    pbtnL: oval(360, 914, 11, 11, .6), pbtnR: oval(664, 914, 11, 11, .6),
+    epL: cut(epL, 1.4), epR: cut(mirror(epL), 1.4),
+    fringeL: fringe([[312, 684], [428, 646]], 7, 34, -3), fringeR: fringe([[596, 646], [712, 684]], 7, 34, 3),
+    collar: cut([[438, 580], [586, 580], [592, 642], [432, 642]], 1.4),
+    collarTrimL: cut([[450, 594], [500, 594], [500, 606], [464, 606], [464, 642], [450, 642]], .8),
+    collarTrimR: cut(mirror([[450, 594], [500, 594], [500, 606], [464, 606], [464, 642], [450, 642]]), .8),
+    earL: oval(364, 462, 34), earR: oval(660, 462, 34),
+    hairL: cut(hairL, 1.4, 12), hairR: cut(mirror(hairL), 1.4, 12), jawL: cut(jawL, 1, 12), jawR: cut(mirror(jawL), 1, 12),
+    head: oval(512, 478, 144, 115, 1.4),
+    eyeL: oval(452, 452, 43), eyeR: oval(572, 452, 43),
+    mouth: cut([[478, 531], [532, 529], [532, 538], [478, 541]], .6, 999),
+    hat: cut([[350, 158], [676, 158], [656, 374], [370, 374]]),
+    hatShade: cut([[610, 162], [676, 158], [656, 374], [622, 374]], 1.2),
+    visor: visor(),
+    plumeRed: cut([[466, 88], [558, 90], [526, 232], [500, 232]], 1.4),
+    plumeWhite: cut([[466, 92], [474, 40], [492, 62], [512, 22], [532, 62], [550, 40], [558, 94]], 1.2, 12),
+    stem: cut([[496, 222], [528, 222], [528, 254], [496, 254]], .8),
+    badge: oval(512, 286, 38), badgeDot: oval(512, 286, 12, 12, .6),
+  };
+
+  // Arm pieces in local space: origin at the pin, arm hanging down +y.
+  function armPieces(side) {
+    const inner = -side;
+    const fingers = [];
+    const lens = [60, 68, 64, 52];
+    for (let i = 0; i < 4; i++) {
+      const x0 = -32 + i * 17, fan = (i - 1.5) * 9;
+      fingers.push(cut([[x0, 214], [x0 + 14, 214], [x0 + 14 + fan, 214 + lens[i]], [x0 + 7 + fan, 220 + lens[i]], [x0 + fan, 214 + lens[i]]], .9, 999));
+    }
+    return {
+      upper: cut([[-40, -22], [40, -22], [38, 168], [-38, 168]]),
+      fold: cut([[-38 * inner, 30], [-24 * inner, 30], [-26 * inner, 168], [-38 * inner, 168]], 1),
+      fore: cut([[-38, -16], [38, -16], [36, 128], [-36, 128]]),
+      cuff: cut([[-50, 110], [50, 110], [48, 184], [-48, 184]], 1.4),
+      hand: combine(cut([[-38, 176], [36, 176], [40, 230], [-40, 230]], 1, 999), ...fingers,
+        cut([[inner * 30, 186], [inner * 40, 196], [inner * 80, 238], [inner * 70, 252], [inner * 30, 222]], .9, 999)),
+    };
+  }
+  const ARM = { [-1]: armPieces(-1), [1]: armPieces(1) };
+  const L1 = 165, L2 = 208; // shoulder→elbow, elbow→palm
+  const SHOULDER = { [-1]: [414, 650], [1]: [610, 650] };
+
+  // ---------- felt texture ----------
+  function feltTile() {
+    const c = document.createElement('canvas'); c.width = c.height = 220;
+    const g = c.getContext('2d');
+    for (let i = 0; i < 2600; i++) {
+      const x = rnd() * 220, y = rnd() * 220, a = rnd() * TAU, l = 2 + rnd() * 7;
+      g.strokeStyle = rnd() > .5 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.10)';
+      g.lineWidth = .6 + rnd() * .7;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+    }
+    return c;
+  }
+  const feltPattern = ctx.createPattern(feltTile(), 'repeat');
+
+  // ---------- stage ----------
+  const VIEW_H = 820, K = 0.46, FEET = 792;
+  let scale = 1, viewW = 1100, mat = null;
+
+  function bakeMat() {
+    mat = document.createElement('canvas');
+    mat.width = canvas.width; mat.height = canvas.height;
+    const g = mat.getContext('2d');
+    g.scale(scale, scale);
+    g.fillStyle = '#2d6a58'; g.fillRect(0, 0, viewW, VIEW_H);
+    // Mottled self-healing surface
+    seed = 99;
+    for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${rnd() > .5 ? '255,255,255' : '0,0,0'},${rnd() * .035})`; g.beginPath(); g.arc(rnd() * viewW, rnd() * VIEW_H, 4 + rnd() * 30, 0, TAU); g.fill(); }
+    // 1 cm grid (1 cm = 20 units), bold every 5 cm, plus 45° guides
+    const CM = 20;
+    for (let x = 40, n = 0; x < viewW; x += CM, n++) { g.strokeStyle = n % 5 ? 'rgba(236,245,230,.13)' : 'rgba(236,245,230,.3)'; g.lineWidth = n % 5 ? .8 : 1.2; g.beginPath(); g.moveTo(x, 34); g.lineTo(x, VIEW_H); g.stroke(); }
+    for (let y = 40, n = 0; y < VIEW_H; y += CM, n++) { g.strokeStyle = n % 5 ? 'rgba(236,245,230,.13)' : 'rgba(236,245,230,.3)'; g.lineWidth = n % 5 ? .8 : 1.2; g.beginPath(); g.moveTo(34, y); g.lineTo(viewW, y); g.stroke(); }
+    g.strokeStyle = 'rgba(236,245,230,.14)'; g.lineWidth = 1;
+    for (let d = -VIEW_H; d < viewW; d += 200) { g.beginPath(); g.moveTo(d, VIEW_H); g.lineTo(d + VIEW_H, 0); g.stroke(); }
+    // Ruler numbers along the top and left edges
+    g.fillStyle = 'rgba(236,245,230,.75)'; g.font = '700 11px Nunito, sans-serif'; g.textAlign = 'center';
+    for (let x = 40, n = 0; x < viewW - 10; x += CM * 5, n += 5) g.fillText(String(n), x, 26);
+    g.textAlign = 'right';
+    for (let y = 40, n = 0; y < VIEW_H - 10; y += CM * 5, n += 5) g.fillText(String(n), 26, y + 4);
+    // Felt offcuts scattered near the edges
+    const scraps = [F.red, F.gold, F.cream, F.black, F.red, F.gold];
+    for (let i = 0; i < 9; i++) {
+      const left = i % 2 === 0;
+      const cx = left ? 70 + rnd() * viewW * .16 : viewW - 70 - rnd() * viewW * .16, cy = 90 + rnd() * (VIEW_H - 160);
+      const pts = []; const n = 3 + Math.floor(rnd() * 3), r = 10 + rnd() * 22, rot = rnd() * TAU;
+      for (let k = 0; k < n; k++) { const a = rot + (k / n) * TAU + rnd() * .5; pts.push([cx + Math.cos(a) * r * (0.6 + rnd() * .6), cy + Math.sin(a) * r * (0.6 + rnd() * .6)]); }
+      g.save(); g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 5 * scale; g.shadowOffsetX = 1.5 * scale; g.shadowOffsetY = 2.5 * scale;
+      g.fillStyle = scraps[i % scraps.length]; g.fill(cut(pts, 1, 8)); g.restore();
+    }
+  }
+
+  // ---------- puppet state ----------
+  const S = {
+    x: 0, dir: 0, target: null, phase: 0, salute: 0, wave: 0, attention: false,
+    blink: 0, nextBlink: 1.5, look: [0, 0], plume: 0, plumeV: 0,
+  };
+  // Current (drawn) pose, eased toward the target pose.
+  const pose = { a: { [-1]: [0, 0], [1]: [0, 0] }, liftL: 0, liftR: 0, bob: 0, tilt: 0 };
+  let stopMotion = !reduceMotion, pointer = null;
+  const keys = new Set();
+  const pads = { L: false, R: false };
+
+  // Two-link IK: returns [upper rotation, forearm rotation relative to upper] for ctx.rotate.
+  function ik(side, tx, ty) {
+    const [sx, sy] = SHOULDER[side];
+    let dx = tx - sx, dy = ty - sy; let d = Math.hypot(dx, dy);
+    const maxD = L1 + L2 - 2; if (d > maxD) { dx *= maxD / d; dy *= maxD / d; d = maxD; }
+    const base = Math.atan2(dy, dx);
+    const off = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+    let best = null;
+    for (const s of [1, -1]) {
+      const b1 = base + s * off, ex = sx + Math.cos(b1) * L1;
+      const b2 = Math.atan2(sy + dy - (sy + Math.sin(b1) * L1), sx + dx - ex);
+      const cand = { r1: b1 - Math.PI / 2, r2: b2 - b1, ex };
+      if (!best || side * cand.ex > side * best.ex) best = cand; // elbow out to the side
+    }
+    return [best.r1, best.r2];
+  }
+  const rest = (side, a, e) => [-side * a, -side * e];
+
+  function targetPose(t) {
+    const marching = S.dir !== 0;
+    const sw = Math.sin(S.phase);
+    const out = { a: {}, liftL: 0, liftR: 0, bob: 0, tilt: 0 };
+    const breathe = Math.sin(t * 2.1) * 3;
+    if (S.attention && !marching) {
+      out.a[-1] = rest(-1, .1, 0); out.a[1] = rest(1, .1, 0); out.bob = breathe * .3;
+    } else {
+      out.a[-1] = rest(-1, .5 + (marching ? .2 * sw : 0), .04 + (marching ? .15 * Math.max(0, sw) : 0));
+      out.a[1] = rest(1, .5 - (marching ? .2 * sw : 0), .04 + (marching ? .15 * Math.max(0, -sw) : 0));
+      out.bob = marching ? -Math.abs(sw) * 14 : breathe;
+      out.tilt = marching ? sw * .025 : Math.sin(t * .9) * .012;
+    }
+    if (marching) { out.liftL = Math.max(0, sw) * 46; out.liftR = Math.max(0, -sw) * 46; }
+    if (S.salute > 0) { out.a[-1] = ik(-1, 404, 392); out.tilt = 0; }
+    if (S.wave > 0) { out.a[1] = ik(1, 790 + Math.sin(t * 9) * 46, 330 + Math.cos(t * 9) * 10); out.tilt = -.03; }
+    return out;
+  }
+
+  function busy() { S.attention = false; document.getElementById('bAtt').classList.remove('on'); }
+  function salute() { S.salute = 2.6; S.wave = 0; }
+  function wave() { S.wave = 2.4; }
+  function attention() { S.attention = !S.attention; S.target = null; document.getElementById('bAtt').classList.toggle('on', S.attention); }
+  function toggleStop() {
+    stopMotion = !stopMotion;
+    const b = document.getElementById('bStop');
+    b.setAttribute('aria-pressed', String(stopMotion));
+    b.textContent = stopMotion ? 'Stop-motion: 12 fps' : 'Stop-motion: off';
+    document.getElementById('fps').textContent = stopMotion ? '12 frames per second' : 'Smooth (screen rate)';
+  }
+
+  addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
+    const k = e.key.toLowerCase();
+    if (['arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+    if (e.repeat) return;
+    keys.add(k);
+    if (k === 's') salute();
+    if (k === 'w') wave();
+    if (k === 'a') attention();
+    if (k === 'm') toggleStop();
+  });
+  addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+  addEventListener('blur', () => keys.clear());
+  function hold(id, name) {
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); pads[name] = true; S.target = null; el.classList.add('on'); el.setPointerCapture?.(e.pointerId); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => el.addEventListener(ev, () => { pads[name] = false; el.classList.remove('on'); }));
+  }
+  hold('bL', 'L'); hold('bR', 'R');
+  document.getElementById('bSalute').addEventListener('click', salute);
+  document.getElementById('bWave').addEventListener('click', wave);
+  document.getElementById('bAtt').addEventListener('click', attention);
+  document.getElementById('bStop').addEventListener('click', toggleStop);
+
+  function toView(e) {
+    const r = canvas.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width * viewW, (e.clientY - r.top) / r.height * VIEW_H];
+  }
+  canvas.addEventListener('pointermove', (e) => { pointer = toView(e); });
+  canvas.addEventListener('pointerleave', () => { pointer = null; });
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.focus({ preventScroll: true });
+    const [px, py] = toView(e); pointer = [px, py];
+    if (Math.abs(px - S.x) < 150 && py < FEET && py > FEET - 700) salute();
+    else { S.target = px; busy(); }
+  });
+
+  const HALF = 400 * K;
+  function update(dt, t) {
+    let dir = 0;
+    if (keys.has('arrowleft') || pads.L) dir -= 1;
+    if (keys.has('arrowright') || pads.R) dir += 1;
+    if (dir) S.target = null;
+    if (!dir && S.target !== null) { const d = S.target - S.x; if (Math.abs(d) < 8) S.target = null; else dir = Math.sign(d); }
+    if (dir) busy();
+    S.dir = dir;
+    S.x = clamp(S.x + dir * 140 * dt, HALF, viewW - HALF);
+    if (dir) S.phase += dt * 7.5; else S.phase = Math.round(S.phase / Math.PI) * Math.PI;
+    S.salute = Math.max(0, S.salute - dt); S.wave = Math.max(0, S.wave - dt);
+    S.blink = Math.max(0, S.blink - dt);
+    if (t > S.nextBlink) { S.blink = .12; S.nextBlink = t + 2 + Math.random() * 3.5; }
+    // Plume: a damped spring that lags behind the body.
+    const force = -dir * .9 - S.plume * 40 - S.plumeV * 6;
+    S.plumeV += force * dt; S.plume += S.plumeV * dt;
+    // Eyes follow the pointer (in body units).
+    let lx = 0, ly = 0;
+    if (pointer) {
+      const bx = S.x, by = FEET - (1500 - 452) * K;
+      const dx = pointer[0] - bx, dy = pointer[1] - by, l = Math.hypot(dx, dy) || 1;
+      const m = Math.min(1, l / 250);
+      lx = dx / l * 16 * m; ly = dy / l * 16 * m;
+    }
+    S.look = [lerp(S.look[0], lx, Math.min(1, dt * 10)), lerp(S.look[1], ly, Math.min(1, dt * 10))];
+    // Ease pose.
+    const tp = targetPose(t), e = Math.min(1, dt * 16);
+    for (const s of [-1, 1]) pose.a[s] = [lerp(pose.a[s][0], tp.a[s][0], e), lerp(pose.a[s][1], tp.a[s][1], e)];
+    pose.liftL = lerp(pose.liftL, tp.liftL, e); pose.liftR = lerp(pose.liftR, tp.liftR, e);
+    pose.bob = lerp(pose.bob, tp.bob, e); pose.tilt = lerp(pose.tilt, tp.tilt, e);
+  }
+
+  // ---------- drawing ----------
+  let pieceNo = 0, boilFrame = 0, pieceCount = 0;
+  function hash(a, b) { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 13; return ((h >>> 0) % 10000) / 10000; }
+  // Stop-motion "boil": every piece sits a hair differently on each frame, like it was re-glued between shots.
+  function piece(path, color) {
+    const i = pieceNo++;
+    ctx.save();
+    if (stopMotion) { ctx.translate((hash(i, boilFrame) - .5) * 2.4, (hash(i + 999, boilFrame) - .5) * 2.4); }
+    ctx.shadowColor = 'rgba(12,30,22,.38)'; ctx.shadowBlur = 7 * scale; ctx.shadowOffsetX = 2 * scale; ctx.shadowOffsetY = 3.5 * scale;
+    ctx.fillStyle = color; ctx.fill(path);
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = feltPattern; ctx.fill(path);
+    ctx.restore();
+  }
+  function pin(x, y) {
+    const g = ctx.createRadialGradient(x - 3, y - 3, 1, x, y, 9);
+    g.addColorStop(0, '#f6e39a'); g.addColorStop(.6, F.brass); g.addColorStop(1, '#7d5f18');
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 3 * scale; ctx.shadowOffsetY = 1.5 * scale;
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, TAU); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  }
+
+  function arm(side) {
+    const A = ARM[side], [r1, r2] = pose.a[side], [sx, sy] = SHOULDER[side];
+    ctx.save();
+    ctx.translate(sx, sy); ctx.rotate(r1);
+    piece(A.upper, F.red); piece(A.fold, F.redDeep);
+    ctx.translate(0, L1); ctx.rotate(r2);
+    piece(A.hand, F.skin); piece(A.fore, F.red); piece(A.cuff, F.gold);
+    pin(0, 0);
+    ctx.restore();
+  }
+
+  function drawSoldier(t) {
+    pieceNo = 0;
+    const sx = S.x;
+    // Contact shadow on the mat.
+    ctx.save(); ctx.fillStyle = 'rgba(8,24,18,.28)';
+    ctx.beginPath(); ctx.ellipse(sx, FEET + 6, 250 * K, 16, 0, 0, TAU); ctx.fill(); ctx.restore();
+
+    ctx.save();
+    ctx.translate(sx, FEET); ctx.scale(K, K); ctx.translate(-512, -1500);
+
+    // Legs first (behind the coat), each lifting on its own.
+    for (const [leg, knee, boot, top, lift] of [[P.legL, P.kneeL, P.bootL, P.bootTopL, pose.liftL], [P.legR, P.kneeR, P.bootR, P.bootTopR, pose.liftR]]) {
+      ctx.save(); ctx.translate(0, -lift);
+      piece(leg, F.cream); piece(knee, F.creamDeep); piece(boot, F.black); piece(top, F.blackDeep);
+      ctx.restore();
+    }
+
+    ctx.translate(0, pose.bob);
+    ctx.translate(512, 900); ctx.rotate(pose.tilt * .5); ctx.translate(-512, -900);
+    piece(P.coatBack, F.red); piece(P.tailFoldL, F.redDeep); piece(P.tailFoldR, F.redDeep);
+    // Trouser tops show through the coat opening.
+    piece(cutTop, F.cream);
+    piece(P.torso, F.red);
+    piece(P.beltA, F.cream); piece(P.beltB, F.cream);
+    piece(P.disc, F.gold); piece(P.discRing, F.goldDeep);
+    piece(P.btn1, F.gold); piece(P.btn2, F.gold); piece(P.btn3, F.gold);
+    piece(P.barL, F.gold); piece(P.barR, F.gold);
+    piece(P.pouchL, F.black); piece(P.flapL, F.blackDeep); piece(P.pbtnL, F.gold);
+    piece(P.pouchR, F.black); piece(P.flapR, F.blackDeep); piece(P.pbtnR, F.gold);
+
+    const saluting = S.salute > 0, waving = S.wave > 0;
+    if (!saluting) arm(-1);
+    if (!waving) arm(1);
+    piece(P.epL, F.gold); piece(P.fringeL, F.gold);
+    piece(P.epR, F.gold); piece(P.fringeR, F.gold);
+    piece(P.collar, F.red); piece(P.collarTrimL, F.gold); piece(P.collarTrimR, F.gold);
+
+    // Head group, tilting on the neck.
+    ctx.save();
+    ctx.translate(512, 600); ctx.rotate(pose.tilt); ctx.translate(-512, -600);
+    piece(P.hairL, F.gold); piece(P.hairR, F.gold);
+    piece(P.earL, F.skin); piece(P.earR, F.skin);
+    piece(P.jawL, F.gold); piece(P.jawR, F.gold);
+    piece(P.head, F.skin);
+    // Eyes: squash vertically to blink; pupils follow the pointer.
+    for (const [eye, cx] of [[P.eyeL, 452], [P.eyeR, 572]]) {
+      ctx.save();
+      if (S.blink > 0) { ctx.translate(0, 452); ctx.scale(1, .12); ctx.translate(0, -452); }
+      piece(eye, F.eye);
+      if (S.blink <= 0) {
+        const inward = cx < 512 ? 6 : -6;
+        ctx.beginPath(); ctx.arc(cx + inward + S.look[0], 456 + S.look[1], 8.5, 0, TAU); ctx.fillStyle = '#141416'; ctx.fill();
+      }
+      ctx.restore();
+    }
+    piece(saluting ? mouthProud : P.mouth, F.mouth);
+    piece(P.hat, F.black); piece(P.hatShade, F.blackDeep);
+    // Plume sways on its own pivot at the badge.
+    ctx.save();
+    ctx.translate(512, 286); ctx.rotate(clamp(S.plume, -.35, .35)); ctx.translate(-512, -286);
+    piece(P.plumeRed, F.red); piece(P.plumeWhite, F.cream);
+    ctx.restore();
+    piece(P.visor, F.blackDeep);
+    piece(P.stem, F.gold); piece(P.badge, F.gold); piece(P.badgeDot, F.goldDeep);
+    ctx.restore(); // head
+
+    // Raised arms go in front of the face.
+    if (saluting) arm(-1);
+    if (waving) arm(1);
+    ctx.restore();
+    if (!pieceCount) { pieceCount = pieceNo; document.getElementById('pieces').textContent = `${pieceCount} cut shapes`; }
+  }
+  const cutTop = cut([[462, 880], [562, 880], [560, 930], [464, 930]], 1);
+  const mouthProud = cut([[476, 528], [534, 526], [528, 540], [504, 546], [482, 540]], .6, 999);
+
+  // ---------- loop ----------
+  let last = performance.now(), t0 = last, acc = 0;
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const t = (now - t0) / 1000;
+    update(dt, t);
+    acc += dt;
+    // In stop-motion mode, only take a new "photo" 12 times a second.
+    if (!stopMotion || acc >= 1 / 12 || !frame.drawn) {
+      acc = stopMotion ? acc % (1 / 12) : 0;
+      boilFrame++;
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      ctx.drawImage(mat, 0, 0, viewW, VIEW_H);
+      drawSoldier(t);
+      // Soft studio light from the top left.
+      const g = ctx.createRadialGradient(viewW * .3, 0, 50, viewW * .5, VIEW_H * .5, viewW * .9);
+      g.addColorStop(0, 'rgba(255,248,230,.10)'); g.addColorStop(1, 'rgba(0,10,5,.28)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, viewW, VIEW_H);
+      frame.drawn = true;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  let bakeTimer = 0;
+  function resize(first) {
+    const cssW = canvas.parentElement.clientWidth;
+    const cssH = Math.min(Math.max(cssW * .62, 340), innerHeight * .78);
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
+    scale = canvas.height / VIEW_H; viewW = canvas.width / scale;
+    S.x = clamp(S.x || viewW / 2, HALF, viewW - HALF);
+    frame.drawn = false;
+    if (first === true) bakeMat(); else { clearTimeout(bakeTimer); bakeTimer = setTimeout(() => { bakeMat(); frame.drawn = false; }, 100); bakeMat(); }
+  }
+  addEventListener('resize', resize);
+  resize(true);
+  if (reduceMotion) { stopMotion = true; toggleStop(); } // start smooth, label in sync
+  window.claude?.hot?.snapshot?.(() => ({ x: S.x, stopMotion }));
+  const start = (saved) => {
+    if (saved && typeof saved.x === 'number') S.x = clamp(saved.x, HALF, viewW - HALF);
+    if (saved && typeof saved.stopMotion === 'boolean' && saved.stopMotion !== stopMotion) toggleStop();
+    requestAnimationFrame(frame);
+  };
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+  S.wave = 2.2; // greet on load
+})();
+</script>
