@@ -2,14 +2,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@500;700;800&display=swap">
 <style>
-  /* Layout: one construction-paper stage, controls taped underneath like cut-out labels. */
+  /* Layout: a paper diorama box on a kraft-paper desk; controls are cut-out labels taped underneath. */
   :root {
-    --kraft: #c9a878;       /* page ground: brown kraft paper */
-    --kraft-dark: #a9875a;
-    --card: #f5efe2;        /* cut-out label paper */
+    --kraft: #c9a878;       /* desk: brown kraft paper */
+    --kraft-dark: #a38156;
+    --card: #f5efe2;        /* label paper */
     --ink: #1d1b22;         /* outline ink */
     --accent: #ef6a3a;      /* beanie orange */
-    --muted: #5b4a36;
+    --brass: #c9a13b;       /* split-pin fasteners */
+    --muted: #57462f;
     --font-display: "Bowlby One", "Arial Black", Impact, sans-serif;
     --font-body: "Nunito", "Trebuchet MS", system-ui, sans-serif;
     color-scheme: light;
@@ -17,116 +18,336 @@
   html, body { height: 100%; }
   body {
     background: var(--kraft);
-    background-image: radial-gradient(rgba(0,0,0,.05) 1px, transparent 1px);
-    background-size: 5px 5px;
+    background-image:
+      radial-gradient(rgba(0,0,0,.05) 1px, transparent 1px),
+      radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 5px 5px, 7px 7px;
+    background-position: 0 0, 2px 3px;
     color: var(--ink);
     font-family: var(--font-body);
     padding-inline: 16px;
-    padding-block: 20px 28px;
+    padding-block: 22px 32px;
     box-sizing: border-box;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
-  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 16px; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 18px; }
   h1 {
     font-family: var(--font-display); font-weight: 400; margin: 0;
-    font-size: clamp(28px, 5vw, 46px); line-height: 1; letter-spacing: .01em;
+    font-size: clamp(30px, 5.2vw, 50px); line-height: 1; letter-spacing: .01em;
     color: var(--card); text-shadow: 3px 3px 0 var(--ink);
     transform: rotate(-1.5deg); text-wrap: balance;
   }
-  header p { margin: 0; font-weight: 700; color: var(--muted); font-size: 15px; }
+  header p { margin: 0 0 4px; font-weight: 700; color: var(--muted); font-size: 15px; max-width: 60ch; }
   .stage {
     position: relative; background: var(--ink); padding: 6px; border-radius: 4px;
-    box-shadow: 0 8px 0 var(--kraft-dark), 0 14px 24px rgba(0,0,0,.25);
+    box-shadow: 0 8px 0 var(--kraft-dark), 0 16px 28px rgba(40,25,10,.3);
   }
+  /* Tape strips holding the diorama down. */
+  .stage::before, .stage::after {
+    content: ""; position: absolute; top: -12px; width: 86px; height: 24px;
+    background: rgba(245,239,226,.72); box-shadow: 0 1px 2px rgba(0,0,0,.12);
+  }
+  .stage::before { left: 7%; transform: rotate(-4deg); }
+  .stage::after { right: 7%; transform: rotate(3deg); }
   canvas { display: block; width: 100%; height: auto; border-radius: 2px; touch-action: none; cursor: pointer; }
   canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  .key, button.pad {
+  .group { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.pad {
     font: 800 14px/1 var(--font-body); color: var(--ink); background: var(--card);
     border: 2.5px solid var(--ink); border-radius: 6px; padding: 10px 14px;
-    box-shadow: 3px 3px 0 var(--ink);
+    box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+    touch-action: none; user-select: none; -webkit-user-select: none; min-width: 48px;
   }
-  button.pad { cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; min-width: 52px; }
+  button.pad:hover { background: #fff7e8; }
   button.pad:active, button.pad.on { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); background: #ffe2b8; }
   button.pad:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .hint { margin: 0; line-height: 1.9; font-weight: 700; font-size: 14px; color: var(--muted); max-width: 65ch; }
-  .hint kbd { font: 800 12px var(--font-body); background: var(--card); border: 2px solid var(--ink); border-radius: 4px; padding: 1px 6px; color: var(--ink); }
+  button.time { background: #22305c; color: #f5efe2; }
+  button.time:hover { background: #2c3c70; }
   .spacer { flex: 1; }
-  @media (max-width: 600px) { .hint { font-size: 13px; } }
+  .foot { display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; align-items: baseline; }
+  .hint { margin: 0; line-height: 2; font-weight: 700; font-size: 14px; color: var(--muted); max-width: 70ch; }
+  .hint kbd { font: 800 12px var(--font-body); background: var(--card); border: 2px solid var(--ink); border-radius: 4px; padding: 1px 6px; color: var(--ink); }
+  .colophon { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .pin { width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f3dc8a, var(--brass) 55%, #7d5f18); border: 1.5px solid var(--ink); flex: none; }
+  @media (prefers-reduced-motion: reduce) { button.pad:active { transform: none; } }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Snowbank Shuffle</h1>
-    <p>Walk Denny around town.</p>
+    <p>Denny is a paper puppet on brass pins. Walk him around a cut-paper mountain town.</p>
   </header>
-  <div class="stage"><canvas id="game" tabindex="0" aria-label="Paper cut-out kid in a snowy town. Use arrow keys to walk, space to jump."></canvas></div>
+  <div class="stage"><canvas id="game" tabindex="0" aria-label="Paper cut-out kid in a snowy town. Arrow keys walk, space jumps, F throws a snowball."></canvas></div>
   <div class="controls">
-    <button class="pad" id="bLeft" aria-label="Walk left">◀</button>
-    <button class="pad" id="bRight" aria-label="Walk right">▶</button>
-    <button class="pad" id="bJump">Jump</button>
-    <button class="pad" id="bWave">Wave</button>
-    <button class="pad" id="bTalk">Talk</button>
+    <div class="group">
+      <button class="pad" id="bLeft" aria-label="Walk left">◀</button>
+      <button class="pad" id="bRight" aria-label="Walk right">▶</button>
+    </div>
+    <div class="group">
+      <button class="pad" id="bJump">Jump</button>
+      <button class="pad" id="bThrow">Snowball</button>
+      <button class="pad" id="bWave">Wave</button>
+      <button class="pad" id="bTalk">Talk</button>
+    </div>
     <span class="spacer"></span>
+    <button class="pad time" id="bTime">Time: Day</button>
   </div>
-  <p class="hint"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> to walk, <kbd>Space</kbd> to jump, <kbd>E</kbd> to wave, <kbd>T</kbd> to talk. Tap the ground to walk to that spot.</p>
+  <div class="foot">
+    <p class="hint"><kbd>←</kbd> <kbd>→</kbd> walk · <kbd>Space</kbd> jump · <kbd>F</kbd> snowball · <kbd>E</kbd> wave · <kbd>T</kbd> talk · <kbd>N</kbd> time of day. Tap the ground to walk there. Stand still and snow piles up on his hat.</p>
+    <p class="colophon"><span class="pin" aria-hidden="true"></span>Six paper layers, two brass fasteners.</p>
+  </div>
 </div>
 
 <script>
 (() => {
   'use strict';
   const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
+  const mainCtx = canvas.getContext('2d');
+  let ctx = mainCtx;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TAU = Math.PI * 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   // ---------- palette (flat construction paper) ----------
   const C = {
-    ink: '#1d1b22', sky: '#8fc4e8', skyLow: '#b9dcf0',
-    mtnFar: '#a9b9d6', mtnMid: '#7f93b8', snow: '#f7f9fb', snowShade: '#dfe7ef',
-    pine: '#2e6b4f', pineDark: '#24563f', trunk: '#6b4a2e',
-    skin: '#f6d3b0', coat: '#2f8f83', coatDark: '#257367', pants: '#6b4a2e',
-    boot: '#3a2a22', hat: '#ef6a3a', hatBand: '#f4c542', mitten: '#d9403a',
-    houses: ['#d98c5f', '#c9c26b', '#8fa8c9', '#c77d9a', '#9bbf8a'], roof: '#5c4033',
+    ink: '#1d1b22',
+    mtnFar: '#aab8d4', mtnMid: '#7e90b5', snow: '#f7f9fb', snowShade: '#dde6ef', snowDeep: '#c9d6e4',
+    pine: '#2e6b4f', pineDark: '#2a5c4a', trunk: '#6b4a2e',
+    skin: '#f6d3b0', coat: '#2f8f83', coatDark: '#236e63', pants: '#6b4a2e',
+    boot: '#3a2a22', hat: '#ef6a3a', hatBand: '#f4c542', mitten: '#d9403a', brass: '#c9a13b',
+    houses: ['#d98c5f', '#c9c26b', '#8fa8c9', '#c77d9a', '#9bbf8a', '#d6b37a'], roof: '#5c4033', window: '#f4e3a8',
   };
+  // Sky + light tint for day (0), dusk (0.5), night (1).
+  const SKY = [
+    [[143, 196, 232], [207, 230, 242]],
+    [[96, 110, 170], [244, 178, 138]],
+    [[38, 52, 104], [84, 98, 150]],
+  ];
+  const TINT = [[255, 255, 255], [250, 206, 182], [96, 110, 170]];
+  function mix3(arr, t) {
+    const i = t < 0.5 ? 0 : 1, k = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    const a = arr[i], b = arr[i + 1];
+    return Array.isArray(a[0]) ? a.map((c, j) => c.map((v, n) => Math.round(lerp(v, b[j][n], k)))) : a.map((v, n) => Math.round(lerp(v, b[n], k)));
+  }
+  const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
   // ---------- world ----------
-  const VIEW_H = 540, GROUND = 452, WORLD_W = 3400;
+  const VIEW_H = 540, GROUND = 452, WORLD_W = 3600, GEN_W = WORLD_W + 2600;
   let scale = 1, viewW = 960;
-  function resize() {
-    const cssW = canvas.parentElement.clientWidth - 12;
-    const cssH = Math.max(260, Math.min(cssW * 9 / 16, innerHeight * 0.68));
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    canvas.style.height = cssH + 'px';
-    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
-    scale = canvas.height / VIEW_H;
-    viewW = canvas.width / scale;
-  }
-  addEventListener('resize', resize);
 
   // Seeded random so the town is the same every visit.
-  let s = 20260930;
-  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  let seed = 20260930;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
   const mountains = [0, 1].map((layer) => {
     const pts = []; let x = -200;
-    while (x < WORLD_W + 400) { pts.push([x, 200 + layer * 60 + rnd() * 110]); x += 160 + rnd() * 220; }
+    while (x < GEN_W) { pts.push([x, 196 + layer * 62 + rnd() * 110]); x += 150 + rnd() * 230; }
     return pts;
   });
-  const houses = [];
-  for (let x = 120; x < WORLD_W; x += 380 + rnd() * 260)
-    houses.push({ x, w: 150 + rnd() * 70, h: 110 + rnd() * 50, color: C.houses[houses.length % C.houses.length], door: rnd() > .5 });
+  const houses = [], windows = [], chimneys = [], lamps = [];
+  for (let x = 140; x < WORLD_W - 100; x += 400 + rnd() * 260) {
+    const h = { x, w: 150 + rnd() * 80, h: 110 + rnd() * 55, color: C.houses[houses.length % C.houses.length], door: rnd() > .45, chim: rnd() > .3 };
+    const base = GROUND - 26, top = base - h.h;
+    h.win = [[x + 16, top + 24, 34, 30]];
+    if (h.door) h.doorRect = [x + h.w - 54, base - 58, 34, 58];
+    else h.win.push([x + h.w - 54, top + 24, 34, 30]);
+    if (h.h > 140) h.win.push([x + 16, top + 72, 34, 30]);
+    h.win.forEach((w) => windows.push({ r: w, lit: rnd() > .15 }));
+    if (h.chim) { h.chimX = x + h.w * (rnd() > .5 ? .72 : .25); chimneys.push({ x: h.chimX + 9, y: top - h.h * .38 - 26, t: rnd() }); }
+    houses.push(h);
+  }
+  for (const h of houses) { const lx = h.x + h.w + 95; if (lx < WORLD_W - 40 && rnd() > .35) lamps.push({ x: lx }); }
   const pines = [];
-  for (let x = 40; x < WORLD_W; x += 70 + rnd() * 160) pines.push({ x, h: 90 + rnd() * 80, far: rnd() > .45 });
-  const mounds = [];
-  for (let x = 0; x < WORLD_W; x += 140 + rnd() * 200) mounds.push({ x, w: 60 + rnd() * 90, h: 10 + rnd() * 14 });
-  const flakes = Array.from({ length: 90 }, () => ({ x: rnd() * 2000, y: rnd() * VIEW_H, r: 1.5 + rnd() * 2.5, v: 25 + rnd() * 35, p: rnd() * 6 }));
+  for (let x = 30; x < GEN_W; x += 60 + rnd() * 150) pines.push({ x, h: 90 + rnd() * 85, far: rnd() > .45 });
+  const bumps = [];
+  for (let x = -100; x < GEN_W; x += 120 + rnd() * 180) bumps.push({ x, w: 60 + rnd() * 100, h: 6 + rnd() * 14 });
+  const fence = [];
+  for (let x = 300; x < GEN_W; x += 700 + rnd() * 900) fence.push({ x, n: 3 + Math.floor(rnd() * 4) });
+  const stars = Array.from({ length: 70 }, () => ({ x: rnd() * 2400, y: 12 + rnd() * 150, r: 1.2 + rnd() * 2.2, p: rnd() * TAU }));
+  const flakes = Array.from({ length: 120 }, () => ({ x: rnd() * 2400, y: rnd() * VIEW_H, r: 1.4 + rnd() * 2.4, v: 22 + rnd() * 34, p: rnd() * 6, front: rnd() > .78 }));
 
-  // Paper grain overlay, generated once.
-  const grain = document.createElement('canvas'); grain.width = grain.height = 160;
-  { const g = grain.getContext('2d'), img = g.createImageData(160, 160);
-    for (let i = 0; i < img.data.length; i += 4) { const v = rnd() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 14; }
-    g.putImageData(img, 0, 0); }
-  const grainPattern = ctx.createPattern(grain, 'repeat');
+  // Hand-cut edges: subdivide a polygon and nudge each vertex a little (stable per call site via seeded rnd).
+  function cutPoly(g, pts, jitter = 0.9, step = 16) {
+    g.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length];
+      const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / step));
+      for (let k = 0; k < n; k++) {
+        const t = k / n, j = k === 0 ? 0.3 : 1;
+        const x = x0 + (x1 - x0) * t + (rnd() - .5) * jitter * 2 * j, y = y0 + (y1 - y0) * t + (rnd() - .5) * jitter * 2 * j;
+        i === 0 && k === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+      }
+    }
+    g.closePath();
+  }
+  function cutCircle(g, cx, cy, rx, ry = rx, jitter = 0.7) {
+    const n = Math.max(14, Math.round((rx + ry) * 0.45)), pts = [];
+    for (let i = 0; i < n; i++) { const a = (i / n) * TAU; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+    cutPoly(g, pts, jitter, 999);
+  }
+  function inked(g, fill, lw = 2.6) { g.fillStyle = fill; g.fill(); if (lw) { g.lineWidth = lw; g.strokeStyle = C.ink; g.lineJoin = 'round'; g.stroke(); } }
+
+  // ---------- baked paper layers ----------
+  // Each layer is drawn once to an offscreen canvas, textured with paper fibre, and given a soft
+  // drop shadow onto whatever sits behind it: that is the diorama depth.
+  const LAYERS = [
+    { par: 0.1, draw: (g, w) => drawMountains(g, w, 0), shadow: 8 },
+    { par: 0.22, draw: (g, w) => drawMountains(g, w, 1), shadow: 10 },
+    { par: 0.5, draw: drawFarPines, shadow: 10 },
+    { par: 1, draw: drawTown, shadow: 12 },
+    { par: 1.28, draw: drawForeground, shadow: 14, front: true },
+  ];
+  function fibre(size) {
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d'), img = g.createImageData(size, size);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = rnd() > .5 ? 255 : 0; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = rnd() * 18;
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+  const fibreTile = fibre(128);
+  function bake() {
+    const bs = Math.min(scale, 2);
+    for (const L of LAYERS) {
+      const w = Math.ceil((WORLD_W - viewW) * L.par + viewW + 60);
+      seed = 777 + LAYERS.indexOf(L) * 101; // same cut edges every bake
+      const tmp = document.createElement('canvas');
+      tmp.width = Math.ceil(w * bs); tmp.height = Math.ceil(VIEW_H * bs);
+      const g = tmp.getContext('2d'); g.scale(bs, bs); g.lineCap = 'round';
+      L.draw(g, w);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = g.createPattern(fibreTile, 'repeat'); g.fillRect(0, 0, tmp.width, tmp.height);
+      const out = document.createElement('canvas'); out.width = tmp.width; out.height = tmp.height;
+      const o = out.getContext('2d');
+      o.shadowColor = 'rgba(22,30,60,.34)'; o.shadowBlur = L.shadow * bs; o.shadowOffsetX = 3 * bs; o.shadowOffsetY = 4 * bs;
+      o.drawImage(tmp, 0, 0);
+      L.canvas = out; L.w = w;
+    }
+  }
+
+  function drawMountains(g, w, layer) {
+    const pts = mountains[layer].filter(([x]) => x < w + 400);
+    const poly = [[pts[0][0], GROUND], ...pts, [pts[pts.length - 1][0], GROUND]];
+    cutPoly(g, poly, 1.2, 22); g.fillStyle = layer ? C.mtnMid : C.mtnFar; g.fill();
+    g.save(); g.clip();
+    // Snow caps: a ragged band following the ridge.
+    g.beginPath();
+    pts.forEach(([x, y], i) => (i ? g.lineTo(x, y + 30 + rnd() * 18) : g.moveTo(x, y + 36)));
+    for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][0], pts[i][1] - 60);
+    g.fillStyle = C.snow; g.fill();
+    // Shaded faces: right slope of every peak a touch darker.
+    g.fillStyle = 'rgba(40,50,90,.12)';
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x, y] = pts[i]; if (pts[i - 1][1] < y || pts[i + 1][1] < y) continue;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(pts[i + 1][0], pts[i + 1][1]); g.lineTo(pts[i + 1][0], GROUND); g.lineTo(x + 30, GROUND); g.closePath(); g.fill();
+    }
+    g.restore();
+  }
+
+  function pine(g, x, base, h, color, lw) {
+    const w = h * 0.56;
+    cutPoly(g, [[x - 5, base - 16], [x + 5, base - 16], [x + 5, base + 4], [x - 5, base + 4]], .5); inked(g, C.trunk, lw);
+    for (let i = 0; i < 3; i++) {
+      const top = base - h + i * h * 0.26, bot = base - 10 - (2 - i) * h * 0.18, ww = w * (0.55 + i * 0.25);
+      cutPoly(g, [[x, top], [x + ww / 2, bot], [x + ww * .18, bot - 5], [x, bot + 1], [x - ww * .2, bot - 5], [x - ww / 2, bot]], .8, 12);
+      inked(g, color, lw);
+      // snow lip on each tier
+      cutPoly(g, [[x - ww / 2 + 3, bot - 1], [x - ww * .2, bot - 6], [x, bot - 3], [x + ww * .18, bot - 6], [x + ww / 2 - 3, bot - 1], [x + ww * .2, bot - 9], [x - ww * .22, bot - 9]], .6, 8);
+      g.fillStyle = C.snow; g.fill();
+    }
+    cutPoly(g, [[x, base - h - 1], [x + w * .15, base - h * .8], [x - w * .15, base - h * .8]], .5);
+    g.fillStyle = C.snow; g.fill();
+  }
+
+  function drawFarPines(g, w) {
+    for (const p of pines) if (p.far && p.x * 1.1 < w) pine(g, p.x * 1.1, GROUND - 38, p.h * .62, C.pineDark, 0);
+    cutPoly(g, [[-10, GROUND - 40], [w + 10, GROUND - 40], [w + 10, GROUND + 10], [-10, GROUND + 10]], 1, 30);
+    g.fillStyle = C.snowDeep; g.fill();
+  }
+
+  function house(g, h) {
+    const base = GROUND - 26, x = h.x, top = base - h.h, apex = top - h.h * .55;
+    if (h.chim) { cutPoly(g, [[h.chimX, apex + h.h * .2 - 34], [h.chimX + 18, apex + h.h * .2 - 34], [h.chimX + 18, top], [h.chimX, top]], .6); inked(g, '#8a4a3a'); }
+    cutPoly(g, [[x, top], [x + h.w, top], [x + h.w, base + 6], [x, base + 6]], 1); inked(g, h.color);
+    // Siding lines
+    g.strokeStyle = 'rgba(0,0,0,.09)'; g.lineWidth = 1.5;
+    for (let y = top + 14; y < base; y += 14) { g.beginPath(); g.moveTo(x + 3, y); g.lineTo(x + h.w - 3, y); g.stroke(); }
+    cutPoly(g, [[x - 18, top + 3], [x + h.w / 2, apex], [x + h.w + 18, top + 3]], 1); inked(g, C.roof);
+    cutPoly(g, [[x - 18, top + 3], [x + h.w / 2, apex], [x + h.w + 18, top + 3], [x + h.w + 6, top + 14], [x + h.w * .75, top - h.h * .1], [x + h.w / 2, apex + 16], [x + h.w * .3, top - h.h * .05], [x - 6, top + 14]], .9, 10);
+    inked(g, C.snow, 2);
+    // Icicles
+    g.fillStyle = '#e8f3fb';
+    for (let ix = x + 4; ix < x + h.w - 4; ix += 11 + rnd() * 12) {
+      const len = 5 + rnd() * 12;
+      g.beginPath(); g.moveTo(ix - 2.5, top + 1); g.lineTo(ix + 2.5, top + 1); g.lineTo(ix, top + len); g.closePath(); g.fill();
+    }
+    for (const [wx, wy, ww, wh] of h.win) {
+      cutPoly(g, [[wx - 3, wy - 3], [wx + ww + 3, wy - 3], [wx + ww + 3, wy + wh + 3], [wx - 3, wy + wh + 3]], .5); inked(g, '#f5efe2', 2);
+      cutPoly(g, [[wx, wy], [wx + ww, wy], [wx + ww, wy + wh], [wx, wy + wh]], .4); inked(g, C.window, 2);
+      g.beginPath(); g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh); g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.lineWidth = 2; g.strokeStyle = C.ink; g.stroke();
+      cutPoly(g, [[wx - 5, wy + wh + 2], [wx + ww + 5, wy + wh + 2], [wx + ww + 3, wy + wh - 3], [wx - 3, wy + wh - 3]], .6); g.fillStyle = C.snow; g.fill();
+    }
+    if (h.doorRect) {
+      const [dx, dy, dw, dh] = h.doorRect;
+      cutPoly(g, [[dx, dy], [dx + dw, dy], [dx + dw, dy + dh], [dx, dy + dh]], .6); inked(g, '#7a4b34');
+      g.beginPath(); g.arc(dx + dw - 8, dy + dh / 2, 2.5, 0, TAU); g.fillStyle = C.brass; g.fill();
+      // Wreath
+      g.beginPath(); g.arc(dx + dw / 2, dy + 16, 8, 0, TAU); g.lineWidth = 5; g.strokeStyle = C.pine; g.stroke();
+      g.beginPath(); g.arc(dx + dw / 2, dy + 24, 2.5, 0, TAU); g.fillStyle = C.mitten; g.fill();
+    }
+  }
+
+  function lamp(g, x) {
+    const base = GROUND - 8;
+    cutPoly(g, [[x - 3, base - 150], [x + 3, base - 150], [x + 3, base], [x - 3, base]], .4); inked(g, '#2c2a33', 2);
+    cutPoly(g, [[x - 13, base - 150], [x + 13, base - 150], [x + 9, base - 172], [x - 9, base - 172]], .4); inked(g, '#f4e3a8', 2);
+    cutPoly(g, [[x - 16, base - 172], [x + 16, base - 172], [x, base - 186]], .4); inked(g, '#2c2a33', 2);
+    cutPoly(g, [[x - 14, base - 176], [x + 14, base - 176], [x, base - 188]], .5); g.fillStyle = C.snow; g.fill();
+  }
+
+  function snowSurface(y) {
+    let v = 0;
+    for (const b of bumps) { const d = (y - b.x) / b.w; if (Math.abs(d) < 1) v += b.h * (0.5 + 0.5 * Math.cos(d * Math.PI)); }
+    return v;
+  }
+
+  function drawTown(g, w) {
+    // back snow shelf the houses sit on
+    cutPoly(g, [[-10, GROUND - 44], [w + 10, GROUND - 44], [w + 10, GROUND], [-10, GROUND]], 1.2, 24);
+    g.fillStyle = C.snowShade; g.fill();
+    for (const h of houses) if (h.x < w) house(g, h);
+    for (const l of lamps) if (l.x < w) lamp(g, l.x);
+    for (const p of pines) if (!p.far && p.x < w) pine(g, p.x, GROUND - 30, p.h, C.pine, 2.4);
+    // Walkable snow: bumpy top edge, cut once.
+    const top = [];
+    for (let x = -10; x <= w + 10; x += 12) top.push([x, GROUND - 14 - snowSurface(x)]);
+    cutPoly(g, [...top, [w + 10, VIEW_H + 10], [-10, VIEW_H + 10]], .8, 12);
+    g.fillStyle = C.snow; g.fill();
+    g.lineWidth = 2; g.strokeStyle = 'rgba(29,27,34,.35)'; g.stroke();
+    // Path the kid walks on: a slightly trodden band.
+    cutPoly(g, [[-10, GROUND - 6], [w + 10, GROUND - 6], [w + 10, GROUND + 14], [-10, GROUND + 14]], 1.4, 20);
+    g.fillStyle = 'rgba(190,208,226,.45)'; g.fill();
+  }
+
+  function drawForeground(g, w) {
+    for (const f of fence) {
+      if (f.x > w) continue;
+      for (let i = 0; i < f.n; i++) {
+        const x = f.x + i * 46;
+        cutPoly(g, [[x - 7, VIEW_H - 96], [x, VIEW_H - 106], [x + 7, VIEW_H - 96], [x + 7, VIEW_H + 10], [x - 7, VIEW_H + 10]], .6); inked(g, '#8a6a48', 2.4);
+        cutCircle(g, x, VIEW_H - 104, 9, 5); g.fillStyle = C.snow; g.fill();
+      }
+      cutPoly(g, [[f.x - 12, VIEW_H - 76], [f.x + (f.n - 1) * 46 + 12, VIEW_H - 80], [f.x + (f.n - 1) * 46 + 12, VIEW_H - 70], [f.x - 12, VIEW_H - 66]], .6); inked(g, '#8a6a48', 2.4);
+    }
+    const top = [];
+    for (let x = -10; x <= w + 10; x += 14) top.push([x, VIEW_H - 22 - 26 * Math.max(0, Math.sin(x * 0.006 + 1.3)) * (0.5 + 0.5 * Math.sin(x * 0.0021))]);
+    cutPoly(g, [...top, [w + 10, VIEW_H + 10], [-10, VIEW_H + 10]], .9, 14);
+    inked(g, C.snow, 2.2);
+  }
 
   // ---------- character state ----------
   const LINES = [
@@ -136,17 +357,40 @@
     "My mom says this coat is \"character building.\"",
     "I could totally jump over that house.",
     "Recess should be four hours long.",
+    "My arms are held on by two brass pins. Don't tell anyone.",
   ];
-  const kid = { x: 520, y: 0, vx: 0, vy: 0, facing: 1, target: null, wave: 0, talk: 0, line: '', blink: 0, nextBlink: 2 };
-  let lineIdx = 0;
+  const kid = {
+    x: 560, y: 0, vx: 0, vy: 0, facing: 1, shown: 1, turn: 0, target: null,
+    wave: 0, throwT: 0, talk: 0, chars: 0, line: '', blink: 0, nextBlink: 2,
+    squash: 0, idle: 0, hatSnow: 0, breath: 1.2, lastStep: 0, bubbleAt: [0, 0],
+  };
+  let lineIdx = 0, timeTarget = 0, timeVal = 0, camX = 0;
+  const TIMES = [['Day', 0], ['Dusk', 0.5], ['Night', 1]];
+  let timeIdx = 0;
   const keys = new Set();
   const pads = { left: false, right: false };
+  const parts = [];   // breath, smoke, snow chunks, splats in flight
+  const marks = [];   // footprints and snowball splats on the ground
 
-  function jump() { if (kid.y === 0) kid.vy = 560; }
-  function wave() { kid.wave = 1.6; }
-  function talk() { kid.line = LINES[lineIdx++ % LINES.length]; kid.talk = 3.2; }
+  function busy() { kid.idle = 0; }
+  function jump() {
+    if (kid.y !== 0) return;
+    kid.vy = 580; busy();
+    if (kid.hatSnow > 0.12) {
+      for (let i = 0; i < 4 + kid.hatSnow * 8; i++) parts.push({ kind: 'chunk', x: kid.x + (Math.random() - .5) * 60, y: GROUND - 172, vx: (Math.random() - .5) * 120, vy: -60 - Math.random() * 120, r: 3 + Math.random() * 4, life: 2, max: 2 });
+      kid.hatSnow = 0;
+    }
+  }
+  function wave() { kid.wave = 1.6; busy(); }
+  function talk() { kid.line = LINES[lineIdx++ % LINES.length]; kid.chars = 0; kid.talk = kid.line.length / 34 + 2.4; busy(); }
+  function throwBall() { if (kid.throwT <= 0) { kid.throwT = 0.42; kid.thrown = false; busy(); } }
+  function cycleTime() {
+    timeIdx = (timeIdx + 1) % TIMES.length; timeTarget = TIMES[timeIdx][1];
+    document.getElementById('bTime').textContent = 'Time: ' + TIMES[timeIdx][0];
+  }
 
   addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
     const k = e.key.toLowerCase();
     if (['arrowleft', 'arrowright', 'arrowup', ' ', 'a', 'd', 'w'].includes(k)) e.preventDefault();
     if (e.repeat) return;
@@ -154,6 +398,8 @@
     if (k === ' ' || k === 'arrowup' || k === 'w') jump();
     if (k === 'e') wave();
     if (k === 't') talk();
+    if (k === 'f') throwBall();
+    if (k === 'n') cycleTime();
   });
   addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
   addEventListener('blur', () => keys.clear());
@@ -169,20 +415,20 @@
   document.getElementById('bJump').addEventListener('click', jump);
   document.getElementById('bWave').addEventListener('click', wave);
   document.getElementById('bTalk').addEventListener('click', talk);
+  document.getElementById('bThrow').addEventListener('click', throwBall);
+  document.getElementById('bTime').addEventListener('click', cycleTime);
 
-  let camX = 0;
   canvas.addEventListener('pointerdown', (e) => {
     canvas.focus({ preventScroll: true });
     const r = canvas.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width * viewW, py = (e.clientY - r.top) / r.height * VIEW_H;
     const wx = camX + px;
-    // Tapping the kid makes them talk; tapping anywhere else walks there.
-    if (Math.abs(wx - kid.x) < 55 && py > GROUND - kid.y - 170 && py < GROUND - kid.y + 10) talk();
-    else kid.target = Math.max(40, Math.min(WORLD_W - 40, wx));
+    if (Math.abs(wx - kid.x) < 55 && py > GROUND - kid.y - 175 && py < GROUND - kid.y + 10) talk();
+    else { kid.target = clamp(wx, 40, WORLD_W - 40); busy(); }
   });
 
   // ---------- update ----------
-  const SPEED = 230;
+  const SPEED = 235;
   function update(dt, t) {
     let dir = 0;
     if (keys.has('arrowleft') || keys.has('a') || pads.left) dir -= 1;
@@ -192,232 +438,477 @@
       if (Math.abs(d) < 6) kid.target = null; else dir = Math.sign(d);
     }
     kid.vx = dir * SPEED;
-    if (dir) kid.facing = dir;
-    kid.x = Math.max(40, Math.min(WORLD_W - 40, kid.x + kid.vx * dt));
+    if (dir) { kid.facing = dir; busy(); }
+    kid.x = clamp(kid.x + kid.vx * dt, 40, WORLD_W - 40);
+
+    // Paper flip when turning: squeeze to a sliver, swap sides, open back up.
+    if (kid.facing !== kid.shown && kid.turn <= 0) kid.turn = 0.16;
+    if (kid.turn > 0) { kid.turn -= dt; if (kid.turn < 0.08) kid.shown = kid.facing; if (kid.turn <= 0) kid.turn = 0; }
+
     if (kid.y > 0 || kid.vy > 0) {
-      kid.vy -= 1600 * dt; kid.y += kid.vy * dt;
-      if (kid.y <= 0) { kid.y = 0; kid.vy = 0; }
+      kid.vy -= 1650 * dt; kid.y += kid.vy * dt;
+      if (kid.y <= 0) {
+        const hard = kid.vy < -300;
+        kid.y = 0; kid.vy = 0; kid.squash = hard ? 1 : .5;
+        for (const s of [-1, 1]) marks.push({ kind: 'print', x: kid.x + s * 15, life: 1, side: s });
+        for (let i = 0; i < 7; i++) parts.push({ kind: 'puff', x: kid.x + (Math.random() - .5) * 50, y: GROUND - 2, vx: (Math.random() - .5) * 90, vy: -30 - Math.random() * 50, r: 4 + Math.random() * 4, life: .6, max: .6 });
+      }
     }
+    kid.squash = Math.max(0, kid.squash - dt * 5);
+
+    // Footprints on each stepped frame change.
+    const frame = Math.floor(t * 12);
+    if (dir && kid.y === 0 && frame % 4 === 0 && frame !== kid.lastStep) {
+      kid.lastStep = frame;
+      const side = (frame / 4) % 2 ? 1 : -1;
+      marks.push({ kind: 'print', x: kid.x + side * 12, life: 1, side });
+      if (marks.length > 260) marks.shift();
+    }
+
+    // Snowball throw: wind-up then release at the hand.
+    if (kid.throwT > 0) {
+      kid.throwT -= dt;
+      if (!kid.thrown && kid.throwT < 0.2) {
+        kid.thrown = true;
+        parts.push({ kind: 'ball', x: kid.x + kid.facing * 40, y: GROUND - kid.y - 120, vx: kid.facing * 560 + kid.vx * .5, vy: -330, r: 7, life: 4, max: 4 });
+      }
+    }
+
     kid.wave = Math.max(0, kid.wave - dt);
     kid.talk = Math.max(0, kid.talk - dt);
+    kid.chars = Math.min(kid.line.length, kid.chars + dt * 34);
     kid.blink = Math.max(0, kid.blink - dt);
     if (t > kid.nextBlink) { kid.blink = .13; kid.nextBlink = t + 2 + Math.random() * 3; }
+    if (!dir && kid.y === 0 && kid.wave <= 0 && kid.talk <= 0 && kid.throwT <= 0) kid.idle += dt;
+    kid.hatSnow = Math.min(1, kid.hatSnow + dt * (kid.idle > 1 ? 0.05 : 0.008));
+
+    // Breath in the cold air.
+    kid.breath -= dt;
+    if (kid.breath <= 0) {
+      kid.breath = 2.2 + Math.random();
+      const f = kid.shown, mx = kid.x + f * 10, my = GROUND - kid.y - 80;
+      for (let i = 0; i < 3; i++) parts.push({ kind: 'breath', x: mx + f * i * 5, y: my - i * 2, vx: f * (16 + i * 6), vy: -8 - i * 4, r: 3 + i, life: 1.6, max: 1.6, delay: i * .08 });
+    }
+
+    // Chimney smoke for chimneys near the view.
+    for (const c of chimneys) {
+      if (c.x < camX - 100 || c.x > camX + viewW + 100) continue;
+      c.t -= dt;
+      if (c.t <= 0) { c.t = 0.45 + Math.random() * .3; parts.push({ kind: 'smoke', x: c.x, y: c.y, vx: 10 + Math.random() * 10, vy: -26 - Math.random() * 10, r: 6, life: 3.2, max: 3.2 }); }
+    }
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      if (p.delay > 0) { p.delay -= dt; continue; }
+      p.life -= dt;
+      if (p.kind === 'ball' || p.kind === 'chunk' || p.kind === 'bit') {
+        p.vy += 1100 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.y >= GROUND + 2) {
+          if (p.kind === 'ball') {
+            marks.push({ kind: 'splat', x: p.x, life: 1, r: 12 + Math.random() * 5 });
+            for (let k = 0; k < 9; k++) parts.push({ kind: 'bit', x: p.x, y: GROUND, vx: (Math.random() - .5) * 220, vy: -120 - Math.random() * 200, r: 2 + Math.random() * 3, life: .9, max: .9 });
+          }
+          parts.splice(i, 1); continue;
+        }
+      } else {
+        p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * (p.kind === 'smoke' ? 7 : 5);
+      }
+      if (p.life <= 0 || p.x < -200 || p.x > WORLD_W + 200) parts.splice(i, 1);
+    }
+    for (let i = marks.length - 1; i >= 0; i--) { marks[i].life -= dt / 30; if (marks[i].life <= 0) marks.splice(i, 1); }
+
+    timeVal += (timeTarget - timeVal) * Math.min(1, dt * 1.6);
+
     const want = kid.x - viewW * 0.45;
-    camX += (Math.max(0, Math.min(WORLD_W - viewW, want)) - camX) * Math.min(1, dt * 5);
-    for (const f of flakes) {
-      if (reduceMotion) break;
-      f.y += f.v * dt; f.x += Math.sin(t * 1.3 + f.p) * 12 * dt;
-      if (f.y > VIEW_H + 5) { f.y = -5; f.x = Math.random() * 2000; }
+    camX += (clamp(want, 0, WORLD_W - viewW) - camX) * Math.min(1, dt * 4.5);
+    if (!reduceMotion) for (const f of flakes) {
+      f.y += f.v * (f.front ? 1.5 : 1) * dt; f.x += Math.sin(t * 1.3 + f.p) * 12 * dt;
+      if (f.y > VIEW_H + 5) { f.y = -5; f.x = Math.random() * 2400; }
     }
   }
 
-  // ---------- drawing helpers ----------
-  function outlined(fill, lw = 3) { ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = C.ink; ctx.stroke(); }
-  function ellipse(x, y, rx, ry, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); }
+  // ---------- drawing ----------
+  function ellipse(x, y, rx, ry, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, TAU); }
+  function outlined(fill, lw = 2.6) { ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = C.ink; ctx.stroke(); }
+  function layer(L) { ctx.drawImage(L.canvas, -camX * L.par, 0, L.w, VIEW_H); }
 
-  function drawBackground() {
-    // Sky
+  function drawSky(t) {
+    const sky = mix3(SKY, timeVal);
     const g = ctx.createLinearGradient(0, 0, 0, GROUND);
-    g.addColorStop(0, C.sky); g.addColorStop(1, C.skyLow);
+    g.addColorStop(0, rgb(sky[0])); g.addColorStop(1, rgb(sky[1]));
     ctx.fillStyle = g; ctx.fillRect(0, 0, viewW, VIEW_H);
-    // Mountains (parallax)
-    mountains.forEach((pts, layer) => {
-      const par = layer ? 0.25 : 0.12;
-      ctx.save(); ctx.translate(-camX * par, 0);
-      ctx.beginPath(); ctx.moveTo(pts[0][0], GROUND);
-      pts.forEach(([x, y]) => ctx.lineTo(x, y));
-      ctx.lineTo(pts[pts.length - 1][0], GROUND); ctx.closePath();
-      ctx.fillStyle = layer ? C.mtnMid : C.mtnFar; ctx.fill();
-      // Snow caps: clip to mountain and paint the top band.
-      ctx.save(); ctx.clip();
-      ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + 38) : ctx.moveTo(x, y + 38)));
-      for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i][0], pts[i][1] - 50);
-      ctx.fillStyle = C.snow; ctx.globalAlpha = .9; ctx.fill(); ctx.restore();
-      ctx.restore();
-    });
-    // Far pines
-    ctx.save(); ctx.translate(-camX * 0.55, 0);
-    for (const p of pines) if (p.far) pine(p.x * 1.1, GROUND - 40, p.h * .6, C.pineDark, false);
-    ctx.restore();
-    // Houses + near pines at ground speed
-    ctx.save(); ctx.translate(-camX, 0);
-    ctx.fillStyle = C.snowShade; ctx.fillRect(camX - 10, GROUND - 42, viewW + 20, 50);
-    for (const h of houses) house(h);
-    for (const p of pines) if (!p.far) pine(p.x, GROUND - 30, p.h, C.pine, true);
-    ctx.restore();
-    // Ground
-    ctx.fillStyle = C.snow; ctx.fillRect(0, GROUND - 16, viewW, VIEW_H);
-    ctx.save(); ctx.translate(-camX, 0);
-    for (const m of mounds) { ellipse(m.x, GROUND - 16, m.w, m.h); ctx.fillStyle = C.snow; ctx.fill(); }
-    ctx.restore();
-    ctx.fillStyle = C.snowShade; ctx.fillRect(0, GROUND + 40, viewW, VIEW_H);
-  }
-
-  function pine(x, base, h, color, outline) {
-    const w = h * 0.55;
-    ctx.fillStyle = C.trunk; ctx.fillRect(x - 5, base - 14, 10, 18);
-    for (let i = 0; i < 3; i++) {
-      const top = base - h + i * h * 0.26, bot = base - 10 - (2 - i) * h * 0.18, ww = w * (0.55 + i * 0.25);
-      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x + ww / 2, bot); ctx.lineTo(x - ww / 2, bot); ctx.closePath();
-      if (outline) outlined(color, 2.5); else { ctx.fillStyle = color; ctx.fill(); }
+    // Low sun during the day and dusk, sinking as it gets later.
+    const sunA = clamp(1 - timeVal * 1.6, 0, 1);
+    if (sunA > 0) {
+      const sx = viewW * .78 - camX * .04, sy = 110 + timeVal * 220;
+      ctx.globalAlpha = sunA;
+      ctx.beginPath(); ctx.arc(sx, sy, 34, 0, TAU); ctx.fillStyle = timeVal > .2 ? '#f7b267' : '#fff4c2'; ctx.fill();
+      ctx.globalAlpha = 1;
     }
-    ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w * .14, base - h * .82); ctx.lineTo(x - w * .14, base - h * .82); ctx.closePath();
-    ctx.fillStyle = C.snow; ctx.fill();
   }
 
-  function house(h) {
-    const base = GROUND - 26, x = h.x, top = base - h.h;
-    ctx.beginPath(); ctx.rect(x, top, h.w, h.h); outlined(h.color);
-    ctx.beginPath(); ctx.moveTo(x - 16, top + 2); ctx.lineTo(x + h.w / 2, top - h.h * .55); ctx.lineTo(x + h.w + 16, top + 2); ctx.closePath(); outlined(C.roof);
-    ctx.beginPath(); ctx.moveTo(x - 16, top + 2); ctx.lineTo(x + h.w / 2, top - h.h * .55); ctx.lineTo(x + h.w + 16, top + 2);
-    ctx.lineTo(x + h.w + 4, top + 12); ctx.lineTo(x + h.w / 2, top - h.h * .42); ctx.lineTo(x - 4, top + 12); ctx.closePath(); outlined(C.snow, 2);
-    const wy = top + 22;
-    ctx.beginPath(); ctx.rect(x + 16, wy, 34, 30); outlined('#fbe6a2', 2.5);
-    ctx.beginPath(); ctx.moveTo(x + 33, wy); ctx.lineTo(x + 33, wy + 30); ctx.moveTo(x + 16, wy + 15); ctx.lineTo(x + 50, wy + 15); ctx.lineWidth = 2; ctx.stroke();
-    if (h.door) { ctx.beginPath(); ctx.rect(x + h.w - 52, base - 56, 32, 56); outlined('#7a4b34', 2.5); }
-    else { ctx.beginPath(); ctx.rect(x + h.w - 52, wy, 34, 30); outlined('#fbe6a2', 2.5); }
+  function drawNightSky(t) {
+    const a = clamp((timeVal - .45) * 2, 0, 1);
+    if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a;
+    for (const s of stars) {
+      const x = ((s.x - camX * .03) % (viewW + 40) + viewW + 40) % (viewW + 40) - 20;
+      const tw = reduceMotion ? 1 : .6 + .4 * Math.sin(t * 2 + s.p);
+      ctx.fillStyle = `rgba(255,246,210,${tw})`;
+      ctx.beginPath(); ctx.moveTo(x, s.y - s.r * 2); ctx.lineTo(x + s.r * .6, s.y); ctx.lineTo(x, s.y + s.r * 2); ctx.lineTo(x - s.r * .6, s.y); ctx.closePath(); ctx.fill();
+    }
+    // Paper moon, pinned to the sky with a brass fastener.
+    const mx = viewW * .72 - camX * .05, my = 86;
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+    ctx.beginPath(); ctx.arc(mx, my, 30, 0, TAU); ctx.fillStyle = '#f7ecc4'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    const sk = mix3(SKY, timeVal), tn = mix3(TINT, timeVal), k = (my - 6) / GROUND;
+    ctx.beginPath(); ctx.arc(mx + 14, my - 6, 26, 0, TAU);
+    ctx.fillStyle = rgb([0, 1, 2].map((i) => Math.round(lerp(sk[0][i], sk[1][i], k) * tn[i] / 255))); ctx.fill();
+    pin(mx - 14, my + 2, 2.6);
+    ctx.restore();
   }
 
-  // ---------- the kid ----------
-  // Origin at the middle of the feet; drawn as flat cut-out pieces with ink outlines.
-  // Limbs move on a stepped 12 fps clock so it looks like paper cut-outs being nudged.
+  function pin(x, y, r = 3.2) {
+    const g = ctx.createRadialGradient(x - r * .4, y - r * .4, r * .2, x, y, r);
+    g.addColorStop(0, '#f6e39a'); g.addColorStop(.6, C.brass); g.addColorStop(1, '#7d5f18');
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = C.ink; ctx.stroke();
+  }
+
+  function drawMarks() {
+    for (const m of marks) {
+      const x = m.x - camX; if (x < -40 || x > viewW + 40) continue;
+      ctx.globalAlpha = Math.min(1, m.life * 1.6);
+      if (m.kind === 'print') { ellipse(x, GROUND + 3 + (m.side > 0 ? 1 : 0), 10, 3.6); ctx.fillStyle = 'rgba(120,145,175,.45)'; ctx.fill(); }
+      else { ellipse(x, GROUND + 4, m.r * 1.5, m.r * .5); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(29,27,34,.3)'; ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawParts(kinds) {
+    for (const p of parts) {
+      if (!kinds.includes(p.kind) || p.delay > 0) continue;
+      const x = p.x - camX; if (x < -60 || x > viewW + 60) continue;
+      const a = clamp(p.life / p.max, 0, 1);
+      if (p.kind === 'ball') {
+        ellipse(x, p.y, p.r, p.r); outlined('#ffffff', 2.2);
+        ellipse(x + 2, p.y + 2, p.r * .5, p.r * .4); ctx.fillStyle = 'rgba(120,145,175,.35)'; ctx.fill();
+      } else if (p.kind === 'smoke') {
+        ctx.globalAlpha = a * .55; ellipse(x, p.y, p.r, p.r * .85); ctx.fillStyle = '#e9edf2'; ctx.fill(); ctx.globalAlpha = 1;
+      } else if (p.kind === 'breath') {
+        const ga = ctx.globalAlpha; ctx.globalAlpha = ga * a * .75; ellipse(x, p.y, p.r, p.r * .8); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.globalAlpha = ga;
+      } else {
+        ctx.globalAlpha = Math.min(1, a * 2); ellipse(x, p.y, p.r, p.r); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ---------- the kid: a split-pin paper puppet ----------
+  // Origin at the middle of the feet. Limbs move on a stepped 12 fps clock, like cut-outs being nudged.
+  function arm(side, a) {
+    ctx.save();
+    ctx.translate(side * 23, -58);
+    ctx.rotate(-side * a);
+    ctx.beginPath(); ctx.roundRect(-7.5, -5, 15, 36, 7.5); outlined(C.coat, 2.5);
+    ctx.beginPath(); ctx.moveTo(-7, 24); ctx.lineTo(7, 24); ctx.lineWidth = 2; ctx.strokeStyle = C.coatDark; ctx.stroke();
+    ellipse(side * 6, 32, 4.5, 4.5); outlined(C.mitten, 2);
+    ellipse(0, 36, 10, 9.5); outlined(C.mitten, 2.5);
+    pin(0, 0, 3.4);
+    ctx.restore();
+  }
+
   function drawKid(t) {
     const frame = Math.floor(t * 12);
     const walking = kid.vx !== 0 && kid.y === 0;
     const air = kid.y > 0;
     const step = walking ? (frame % 4 < 2 ? 1 : -1) : 0;
-    const bob = walking && frame % 2 ? -3 : 0;
-    const f = kid.facing;
+    const idleStomp = !walking && !air && kid.idle > 3 && Math.floor(kid.idle * 2) % 10 === 0;
+    const bob = (walking && frame % 2) || idleStomp ? -3 : 0;
     const sx = kid.x - camX, sy = GROUND - kid.y;
 
-    // Shadow
+    // Shadow on the snow
     const shadowW = 44 * (1 - Math.min(.6, kid.y / 300));
-    ellipse(sx, GROUND + 2, shadowW, 7); ctx.fillStyle = 'rgba(40,60,90,.18)'; ctx.fill();
+    ellipse(sx, GROUND + 3, shadowW, 7); ctx.fillStyle = 'rgba(40,60,100,.2)'; ctx.fill();
 
-    ctx.save(); ctx.translate(sx, sy + bob);
+    // Flip + squash about the feet.
+    let flipX = 1;
+    if (kid.turn > 0) flipX = Math.max(0.1, Math.abs(1 - 2 * (1 - kid.turn / 0.16)));
+    const sq = kid.squash, stretch = air ? Math.min(.08, kid.vy / 7000) : 0;
+    ctx.save();
+    ctx.translate(sx, sy + bob);
+    ctx.scale(kid.shown * flipX * (1 + sq * .1 - stretch * .5), 1 - sq * .12 + stretch);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(20,25,50,.22)'; ctx.shadowBlur = 5 * scale; ctx.shadowOffsetX = 2 * scale; ctx.shadowOffsetY = 2 * scale;
 
-    // Feet
+    // Feet + pants
     const tuck = air ? -8 : 0;
-    ellipse(-15 + step * 7, -4 + tuck, 15, 7.5); outlined(C.boot, 2.5);
-    ellipse(15 - step * 7, -4 + tuck, 15, 7.5); outlined(C.boot, 2.5);
-    // Pants
-    ctx.beginPath(); ctx.rect(-27, -20 + tuck, 54, 14); outlined(C.pants, 2.5);
+    ellipse(-15 + step * 7, -4 + tuck, 15.5, 7.5); outlined(C.boot);
+    ellipse(15 - step * 7, -4 + tuck, 15.5, 7.5); outlined(C.boot);
+    ctx.beginPath(); ctx.roundRect(-27, -21 + tuck, 54, 15, 3); outlined(C.pants);
 
-    // Coat (slightly flared)
+    // Coat
     ctx.beginPath();
-    ctx.moveTo(-31, -18 + tuck); ctx.lineTo(31, -18 + tuck);
-    ctx.quadraticCurveTo(30, -58, 24, -66); ctx.lineTo(-24, -66);
-    ctx.quadraticCurveTo(-30, -58, -31, -18 + tuck); ctx.closePath();
+    ctx.moveTo(-31, -17 + tuck); ctx.lineTo(31, -17 + tuck);
+    ctx.quadraticCurveTo(30, -58, 24, -67); ctx.lineTo(-24, -67);
+    ctx.quadraticCurveTo(-30, -58, -31, -17 + tuck); ctx.closePath();
     outlined(C.coat);
-    ctx.beginPath(); ctx.moveTo(f * 3, -64); ctx.lineTo(f * 3, -20 + tuck); ctx.lineWidth = 2; ctx.strokeStyle = C.coatDark; ctx.stroke();
-    for (const by of [-54, -42, -30]) { ellipse(f * 9, by, 2.6, 2.6); ctx.fillStyle = C.ink; ctx.fill(); }
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath(); ctx.moveTo(3, -65); ctx.lineTo(3, -19 + tuck); ctx.lineWidth = 2; ctx.strokeStyle = C.coatDark; ctx.stroke();
+    for (const by of [-55, -43, -31]) { ellipse(10, by, 2.6, 2.6); ctx.fillStyle = C.ink; ctx.fill(); }
+    // Pocket
+    ctx.beginPath(); ctx.moveTo(-22, -34); ctx.lineTo(-10, -34); ctx.lineWidth = 2; ctx.strokeStyle = C.coatDark; ctx.stroke();
 
-    // Mittens: swing when walking, up when jumping, one waves.
-    const swing = walking ? step * 6 : 0;
-    const back = [-f * 33, -38 - swing * f * .5 - (air ? 22 : 0)];
-    let front = [f * 33, -38 + swing * f * .5 - (air ? 22 : 0)];
-    if (kid.wave > 0) front = [f * 64 + (frame % 4 < 2 ? 6 : -4) * f, -92];
-    for (const [mx, my] of [back, front]) {
-      ctx.beginPath(); ctx.moveTo(Math.sign(mx) * 24, -58); ctx.lineTo(mx, my);
-      ctx.lineWidth = 12; ctx.strokeStyle = C.ink; ctx.stroke();
-      ctx.lineWidth = 7; ctx.strokeStyle = C.coat; ctx.stroke();
-      ellipse(mx, my, 9, 9); outlined(C.mitten, 2.5);
-      ellipse(mx + Math.sign(mx) * 5, my - 5, 4, 4); outlined(C.mitten, 2);
+    // Arms on brass pins. "Front" (+1) is the side he's facing, since the whole puppet is flipped.
+    let aBack = .16, aFront = .16;
+    if (walking) { aBack = step > 0 ? .5 : .05; aFront = step > 0 ? .05 : .5; }
+    if (air) { aBack = aFront = 2.2; }
+    if (kid.wave > 0) aFront = 2.55 + (frame % 4 < 2 ? .28 : -.22);
+    if (kid.throwT > 0) aFront = kid.throwT > .2 ? 3.0 : 1.25;
+    ctx.shadowColor = 'rgba(20,25,50,.22)';
+    arm(-1, aBack);
+
+    // Head on a hidden neck pin: tilts when idle-looking or talking.
+    let look = 1, tilt = 0;
+    if (kid.idle > 3) { look = [1, 0, -1, 0][Math.floor(kid.idle * 0.9) % 4]; tilt = look * -.05; }
+    if (kid.talk > 0 && kid.chars < kid.line.length) tilt = frame % 6 < 3 ? .03 : -.02;
+    ctx.save();
+    ctx.translate(0, -64); ctx.rotate(tilt); ctx.translate(0, 64);
+    const hy = -112;
+    ellipse(0, hy, 53, 48); outlined(C.skin);
+    ctx.shadowColor = 'transparent';
+
+    // Beanie
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(0, hy, 53, 48, 0, Math.PI, 0); ctx.clip();
+    ctx.fillStyle = C.hat; ctx.fillRect(-60, hy - 60, 120, 44);
+    ctx.fillStyle = 'rgba(0,0,0,.09)'; for (let i = -50; i < 52; i += 11) ctx.fillRect(i, hy - 60, 4.5, 34);
+    ctx.fillStyle = C.hatBand; ctx.fillRect(-60, hy - 30, 120, 14);
+    ctx.fillStyle = 'rgba(0,0,0,.08)'; for (let i = -54; i < 54; i += 8) ctx.fillRect(i, hy - 30, 3, 14);
+    ctx.restore();
+    ctx.beginPath(); ctx.moveTo(-52, hy - 16); ctx.quadraticCurveTo(0, hy - 10, 52, hy - 16); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, hy, 53, 48, 0, Math.PI * 1.02, Math.PI * 1.98); ctx.lineWidth = 3; ctx.stroke();
+    ellipse(4, hy - 52, 11.5, 10.5); outlined(C.hatBand, 2.5);
+    // Snow piling up on the hat.
+    if (kid.hatSnow > 0.03) {
+      const h = kid.hatSnow, dome = (x) => hy - 48 * Math.sqrt(Math.max(0, 1 - (x / 53) ** 2));
+      const span = 30 + 12 * h;
+      ctx.beginPath();
+      for (let x = -span; x <= span; x += 4) ctx.lineTo(x, dome(x) + 1.5);
+      for (let x = span; x >= -span; x -= 4) {
+        const edge = 1 - (x / span) ** 2;
+        ctx.lineTo(x, dome(x) - edge * (4 + 7 * h) - (Math.round(x / 8) % 2 ? 1.5 * h : 0));
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = 'rgba(29,27,34,.5)'; ctx.stroke();
+      ellipse(4, hy - 60 - 2 * h, 7 + 3 * h, 2.5 + 3 * h); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
     }
 
-    // Head
-    const hx = 0, hy = -112;
-    ellipse(hx, hy, 52, 48); outlined(C.skin);
+    // Cold cheeks
+    ctx.fillStyle = 'rgba(232,110,110,.28)';
+    ellipse(-33, hy + 20, 8, 4.5); ctx.fill(); ellipse(33, hy + 20, 8, 4.5); ctx.fill();
 
-    // Beanie: dome over the top of the head, band, pom-pom.
-    ctx.save();
-    ctx.beginPath(); ctx.ellipse(hx, hy, 52, 48, 0, Math.PI, 0); ctx.lineTo(hx + 52, hy - 6);
-    ctx.clip();
-    ctx.fillStyle = C.hat; ctx.fillRect(hx - 60, hy - 60, 120, 44);
-    ctx.fillStyle = C.hatBand; ctx.fillRect(hx - 60, hy - 30, 120, 13);
-    ctx.fillStyle = 'rgba(0,0,0,.08)'; for (let i = -48; i < 48; i += 12) ctx.fillRect(hx + i, hy - 60, 5, 30);
-    ctx.restore();
-    ctx.beginPath(); ctx.moveTo(hx - 51, hy - 17); ctx.quadraticCurveTo(hx, hy - 12, hx + 51, hy - 17); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(hx, hy, 52, 48, 0, Math.PI * 1.02, Math.PI * 1.98); ctx.lineWidth = 3; ctx.stroke();
-    ellipse(hx + f * 4, hy - 52, 11, 10); outlined(C.hatBand, 2.5);
-
-    // Eyes: two big ovals that touch, pupils look where he's heading.
+    // Eyes: two big ovals that touch; pupils look ahead (or around when idle).
     const ey = hy + 2;
     for (const side of [-1, 1]) {
-      const ex = hx + side * 13 + f * 3;
+      const ex = side * 13 + 3;
       if (kid.blink > 0) {
         ctx.beginPath(); ctx.moveTo(ex - 10, ey + 2); ctx.quadraticCurveTo(ex, ey + 6, ex + 10, ey + 2);
         ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke();
       } else {
-        ellipse(ex, ey, 14, 16, side * -0.12); outlined('#ffffff', 2.5);
-        const look = kid.target !== null ? Math.sign(kid.target - kid.x) : f;
-        ellipse(ex + look * 5 - side * 1, ey + (air ? -4 : 1), 3.2, 3.6); ctx.fillStyle = C.ink; ctx.fill();
+        ellipse(ex, ey, 14, 16.5, side * -0.12); outlined('#ffffff', 2.5);
+        ellipse(ex + look * 5 - side, ey + (air ? -5 : 1), 3.3, 3.8); ctx.fillStyle = C.ink; ctx.fill();
       }
     }
+    // Eyebrows lift when surprised (jumping) or talking.
+    const browY = ey - 22 - (air ? 5 : 0) - (kid.talk > 0 ? 2 : 0);
+    ctx.lineWidth = 2.6; ctx.strokeStyle = C.ink;
+    ctx.beginPath(); ctx.moveTo(-20, browY + 1); ctx.lineTo(-8, browY - 1); ctx.moveTo(10, browY - 1); ctx.lineTo(22, browY + 1); ctx.stroke();
 
-    // Mouth: small line, flaps open on the 12 fps clock while talking.
-    const mx = hx + f * 6, my = hy + 30;
-    if (kid.talk > 0 && frame % 3 !== 0) { ellipse(mx, my, 7, 5); outlined('#7a2530', 2); }
-    else if (air) { ellipse(mx, my, 5, 5); outlined('#7a2530', 2); }
-    else { ctx.beginPath(); ctx.moveTo(mx - 8, my); ctx.quadraticCurveTo(mx, my + 3, mx + 8, my); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke(); }
+    // Mouth: flaps open on the stepped clock while words are still appearing.
+    const mx = 7, my = hy + 30;
+    const speaking = kid.talk > 0 && kid.chars < kid.line.length;
+    if (speaking && frame % 3 !== 0) { ellipse(mx, my, 7.5, 5.5); outlined('#7a2530', 2); }
+    else if (air || kid.throwT > 0) { ellipse(mx, my, 5, 5); outlined('#7a2530', 2); }
+    else { ctx.beginPath(); ctx.moveTo(mx - 9, my); ctx.quadraticCurveTo(mx, my + 3.5, mx + 9, my); ctx.lineWidth = 2.5; ctx.strokeStyle = C.ink; ctx.stroke(); }
+    ctx.restore(); // head
 
+    ctx.shadowColor = 'rgba(20,25,50,.22)';
+    arm(1, aFront);
     ctx.restore();
 
-    kid.bubbleAt = [sx, sy + bob - 180];
+    kid.bubbleAt = [sx, sy + bob - 186];
   }
 
-  function bubble(x, y, text) {
+  function drawLights() {
+    const a = clamp((timeVal - .3) / .7, 0, 1);
+    if (a <= 0) return;
+    ctx.save();
+    for (const w of windows) {
+      if (!w.lit) continue;
+      const [wx, wy, ww, wh] = w.r, x = wx - camX;
+      if (x < -120 || x > viewW + 120) continue;
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = a * .92;
+      ctx.fillStyle = '#ffcf6b'; ctx.fillRect(x + 2, wy + 2, ww - 4, wh - 4);
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + ww / 2, wy); ctx.lineTo(x + ww / 2, wy + wh); ctx.moveTo(x, wy + wh / 2); ctx.lineTo(x + ww, wy + wh / 2); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .35;
+      const g = ctx.createRadialGradient(x + ww / 2, wy + wh / 2, 4, x + ww / 2, wy + wh / 2, 70);
+      g.addColorStop(0, '#ffb14a'); g.addColorStop(1, 'rgba(255,177,74,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - 60, wy - 60, ww + 120, wh + 120);
+    }
+    for (const l of lamps) {
+      const x = l.x - camX; if (x < -200 || x > viewW + 200) continue;
+      const ly = GROUND - 8 - 161;
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = a;
+      ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.moveTo(x - 11, ly + 9); ctx.lineTo(x + 11, ly + 9); ctx.lineTo(x + 8, ly - 9); ctx.lineTo(x - 8, ly - 9); ctx.closePath(); ctx.fill();
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .5;
+      const g = ctx.createRadialGradient(x, ly, 4, x, ly, 150);
+      g.addColorStop(0, '#ffc766'); g.addColorStop(1, 'rgba(255,199,102,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - 150, ly - 150, 300, 300);
+      // Pool of light on the snow.
+      ctx.globalAlpha = a * .35;
+      const p = ctx.createRadialGradient(x, GROUND + 4, 4, x, GROUND + 4, 110);
+      p.addColorStop(0, '#ffd98a'); p.addColorStop(1, 'rgba(255,217,138,0)');
+      ctx.fillStyle = p; ctx.save(); ctx.translate(x, GROUND + 4); ctx.scale(1, .25); ctx.translate(-x, -(GROUND + 4));
+      ctx.fillRect(x - 110, GROUND - 106, 220, 220); ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawFlakes(front) {
+    const night = timeVal;
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = front ? .95 - night * .3 : .85;
+    for (const f of flakes) {
+      if (f.front !== front) continue;
+      const par = front ? 1.4 : .35;
+      const x = ((f.x - camX * par) % (viewW + 20) + viewW + 20) % (viewW + 20) - 10;
+      const r = front ? f.r * 1.8 : f.r;
+      ellipse(x, f.y, r, r); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function bubble(x, y, text, shown) {
     ctx.save();
     ctx.font = '800 17px Nunito, "Trebuchet MS", sans-serif';
-    const maxW = Math.min(280, viewW - 40);
+    const maxW = Math.min(300, viewW - 40);
     const words = text.split(' '), lines = []; let cur = '';
     for (const w of words) { const tryL = cur ? cur + ' ' + w : w; if (ctx.measureText(tryL).width > maxW - 28 && cur) { lines.push(cur); cur = w; } else cur = tryL; }
     lines.push(cur);
-    const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28, h = lines.length * 22 + 18;
-    let bx = Math.max(10, Math.min(viewW - w - 10, x - w / 2)); const by = Math.max(10, y - h);
-    ctx.beginPath(); ctx.roundRect(bx, by, w, h, 12);
-    ctx.moveTo(x - 10, by + h); ctx.lineTo(x - 2, by + h + 16); ctx.lineTo(x + 8, by + h);
-    ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.fillRect(x - 8, by + h - 3, 14, 4);
+    const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 30, h = lines.length * 22 + 20;
+    const bx = clamp(x - w / 2, 10, viewW - w - 10), by = Math.max(10, y - h);
+    const tail = clamp(x, bx + 20, bx + w - 20);
+    ctx.shadowColor = 'rgba(20,25,50,.3)'; ctx.shadowBlur = 8 * scale; ctx.shadowOffsetX = 2 * scale; ctx.shadowOffsetY = 3 * scale;
+    ctx.beginPath(); ctx.roundRect(bx, by, w, h, 14);
+    ctx.moveTo(tail - 10, by + h); ctx.lineTo(tail - 4, by + h + 16); ctx.lineTo(tail + 8, by + h);
+    ctx.fillStyle = '#fffdf7'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.fillStyle = '#fffdf7'; ctx.fillRect(tail - 8, by + h - 3, 14, 5);
     ctx.fillStyle = C.ink; ctx.textBaseline = 'top';
-    lines.forEach((l, i) => ctx.fillText(l, bx + 14, by + 10 + i * 22));
+    // Typewriter reveal, but the bubble is sized for the full line so it doesn't jump.
+    let left = Math.floor(shown);
+    lines.forEach((l, i) => { const part = l.slice(0, Math.max(0, left)); left -= l.length + 1; ctx.fillText(part, bx + 15, by + 11 + i * 22); });
     ctx.restore();
-  }
-
-  function drawSnow() {
-    ctx.fillStyle = '#ffffff';
-    for (const f of flakes) {
-      const x = ((f.x - camX * 0.3) % viewW + viewW) % viewW;
-      ellipse(x, f.y, f.r, f.r); ctx.fill();
-    }
   }
 
   // ---------- loop ----------
   let last = performance.now(), t0 = last;
-  function start(saved) {
-    if (saved && typeof saved.x === 'number') { kid.x = saved.x; kid.facing = saved.facing || 1; }
-    camX = Math.max(0, kid.x - viewW * 0.45);
-    requestAnimationFrame(tick);
-  }
-  function tick(now) {
+  function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const t = (now - t0) / 1000;
     update(dt, t);
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    drawBackground();
-    drawKid(t);
-    drawSnow();
-    if (kid.talk > 0) bubble(kid.bubbleAt[0], kid.bubbleAt[1], kid.line);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = grainPattern; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    requestAnimationFrame(tick);
+    drawSky(t);
+    for (const L of LAYERS) if (!L.front) layer(L);
+    drawMarks();
+    drawFlakes(false);
+    drawParts(['smoke', 'puff', 'chunk', 'ball', 'bit']);
+    // Time-of-day light: one multiply pass over the scenery behind the kid.
+    const tint = mix3(TINT, timeVal);
+    ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = rgb(tint); ctx.fillRect(0, 0, viewW, VIEW_H);
+    ctx.globalCompositeOperation = 'source-over';
+    drawNightSky(t);
+    drawLights();
+    drawKidTinted(t);
+    ctx.globalAlpha = 1 - timeVal * .45; drawParts(['breath']); ctx.globalAlpha = 1;
+    drawForegroundTinted();
+    drawFlakes(true);
+    if (kid.talk > 0) bubble(kid.bubbleAt[0], kid.bubbleAt[1], kid.line, kid.chars);
+    // Soft vignette like light falling off inside a box.
+    const v = ctx.createRadialGradient(viewW / 2, VIEW_H * .55, VIEW_H * .45, viewW / 2, VIEW_H * .55, viewW * .75);
+    v.addColorStop(0, 'rgba(20,15,30,0)'); v.addColorStop(1, 'rgba(20,15,30,.22)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, viewW, VIEW_H);
+    requestAnimationFrame(frame);
   }
 
-  resize();
-  window.claude?.hot?.snapshot?.(() => ({ x: kid.x, facing: kid.facing }));
+  // Tint a canvas by the time-of-day light without touching its transparent pixels.
+  function tintCanvas(src, dst, mask, color) {
+    const d = dst.getContext('2d'), m = mask.getContext('2d');
+    m.globalCompositeOperation = 'copy'; m.drawImage(src, 0, 0);
+    d.globalCompositeOperation = 'copy'; d.drawImage(src, 0, 0);
+    d.globalCompositeOperation = 'multiply'; d.fillStyle = color; d.fillRect(0, 0, dst.width, dst.height);
+    d.globalCompositeOperation = 'destination-in'; d.drawImage(mask, 0, 0);
+    d.globalCompositeOperation = 'source-over';
+  }
+  const ACTOR_W = 320, ACTOR_H = 440, ACTOR_OX = 160, ACTOR_OY = 310;
+  let actor, actorOut, actorMask, fgTint = { key: -1 };
+  function makeActor() {
+    const mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil(ACTOR_W * scale); c.height = Math.ceil(ACTOR_H * scale); return c; };
+    actor = mk(); actorOut = mk(); actorMask = mk(); fgTint = { key: -1 };
+  }
+  function drawKidTinted(t) {
+    const tint = mix3(TINT, timeVal);
+    const sx = kid.x - camX, sy = GROUND - kid.y;
+    const a = actor.getContext('2d');
+    a.setTransform(1, 0, 0, 1, 0, 0); a.clearRect(0, 0, actor.width, actor.height);
+    a.setTransform(scale, 0, 0, scale, (ACTOR_OX - sx) * scale, (ACTOR_OY - sy) * scale);
+    ctx = a; drawKid(t); ctx = mainCtx;
+    let img = actor;
+    if (timeVal > 0.01) { tintCanvas(actor, actorOut, actorMask, rgb(tint)); img = actorOut; }
+    ctx.drawImage(img, sx - ACTOR_OX, sy - ACTOR_OY, ACTOR_W, ACTOR_H);
+  }
+  function drawForegroundTinted() {
+    const L = LAYERS[LAYERS.length - 1];
+    const key = Math.round(timeVal * 40);
+    if (key === 0) return layer(L);
+    if (fgTint.key !== key || fgTint.src !== L.canvas) {
+      if (!fgTint.out || fgTint.src !== L.canvas) {
+        fgTint.out = document.createElement('canvas'); fgTint.mask = document.createElement('canvas');
+        fgTint.out.width = fgTint.mask.width = L.canvas.width; fgTint.out.height = fgTint.mask.height = L.canvas.height;
+      }
+      tintCanvas(L.canvas, fgTint.out, fgTint.mask, rgb(mix3(TINT, key / 40)));
+      fgTint.key = key; fgTint.src = L.canvas;
+    }
+    ctx.drawImage(fgTint.out, -camX * L.par, 0, L.w, VIEW_H);
+  }
+
+  let bakeTimer = 0;
+  function resize(first) {
+    const cssW = canvas.parentElement.clientWidth - 12;
+    const cssH = Math.max(260, Math.min(cssW * 9 / 16, innerHeight * 0.7));
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
+    scale = canvas.height / VIEW_H;
+    viewW = canvas.width / scale;
+    makeActor();
+    if (first === true) bake();
+    else { clearTimeout(bakeTimer); bakeTimer = setTimeout(bake, 120); }
+  }
+  addEventListener('resize', resize);
+
+  function start(saved) {
+    if (saved && typeof saved.x === 'number') { kid.x = saved.x; kid.facing = kid.shown = saved.facing || 1; }
+    if (saved && typeof saved.timeIdx === 'number') { timeIdx = saved.timeIdx; timeTarget = timeVal = TIMES[timeIdx][1]; document.getElementById('bTime').textContent = 'Time: ' + TIMES[timeIdx][0]; }
+    camX = clamp(kid.x - viewW * 0.45, 0, WORLD_W - viewW);
+    requestAnimationFrame(frame);
+  }
+
+  resize(true);
+  window.claude?.hot?.snapshot?.(() => ({ x: kid.x, facing: kid.facing, timeIdx }));
   window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
-  // Say hello on load so the first frame shows what he can do.
-  kid.line = "Hi, I'm Denny. Use the arrows to walk me around!"; kid.talk = 4.5;
+  kid.line = "Hi, I'm Denny. Walk me around, or press F to throw a snowball!"; kid.chars = 0; kid.talk = 5;
 })();
 </script>
