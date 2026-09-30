@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hand-drawn Sketches</title>
+  <style>
+    body { margin: 0; background: #d9d6cc; font: 14px system-ui, sans-serif; }
+    nav { display: flex; gap: 8px; align-items: center; padding: 10px 16px; }
+    canvas { display: block; width: min(100vw - 32px, 1600px); height: auto; margin: 0 16px 16px; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+  </style>
+</head>
+<body>
+  <nav>
+    <select id="scene"></select>
+    <label>seed <input id="seed" type="number" value="7" style="width:6em"></label>
+    <button id="reroll">re-roll</button>
+  </nav>
+  <canvas id="c" width="1600" height="1131"></canvas>
+  <script src="lib/sketch.js"></script>
+  <script src="scenes/saturn.js"></script>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const sel = document.getElementById('scene'), seedEl = document.getElementById('seed');
+    for (const name of Object.keys(Scenes)) sel.add(new Option(name, name));
+    sel.value = q.get('scene') || Object.keys(Scenes)[0];
+    seedEl.value = q.get('seed') || 7;
+    function render() {
+      const canvas = document.getElementById('c');
+      canvas.getContext('2d').reset?.();
+      Scenes[sel.value](canvas, +seedEl.value);
+      window.done = true;
+    }
+    sel.onchange = seedEl.onchange = render;
+    document.getElementById('reroll').onclick = () => { seedEl.value = Math.floor(Math.random() * 1e6); render(); };
+    render();
+  </script>
+</body>
+</html>
